@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: weatherengine-backend
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/weatherengine}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate # schema.sql is the source of truth, not Hibernate auto-generation
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 900000 # 15 min, matches the caching strategy in the project plan
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+
+server:
+  port: ${PORT:8080}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24h
+
+  weather-providers:
+    openweathermap:
+      api-key: ${OPENWEATHERMAP_API_KEY}
+    waqi:
+      api-key: ${WAQI_API_KEY}
+    openuv:
+      api-key: ${OPENUV_API_KEY}
+
+  fcm:
+    credentials-path: ${FCM_CREDENTIALS_PATH:}
+
+logging:
+  level:
+    com.weatherengine: DEBUG
