@@ -1,0 +1,27 @@
+{
+  "latitude": 52.5,
+  "longitude": 13.4,
+  "generationtime_ms": 0.31,
+  "utc_offset_seconds": 7200,
+  "timezone": "Europe/Berlin",
+  "timezone_abbreviation": "GMT+2",
+  "elevation": 38.0,
+  "current_units": {
+    "time": "iso8601",
+    "interval": "seconds",
+    "grass_pollen": "grains/m³",
+    "birch_pollen": "grains/m³",
+    "alder_pollen": "grains/m³",
+    "ragweed_pollen": "grains/m³"
+  },
+  "current": {
+    "time": "2026-09-28T08:00",
+    "interval": 3600,
+    "us_aqi": 35,
+    "pm2_5": 8.5,
+    "grass_pollen": 15.0,
+    "birch_pollen": 45.0,
+    "alder_pollen": 2.0,
+    "ragweed_pollen": 0.2
+  }
+}
