@@ -2,7 +2,9 @@ package com.weatherengine.app.ui.personas
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.weatherengine.app.data.api.NetworkResult
 import com.weatherengine.app.data.local.SettingsStore
+import com.weatherengine.app.data.repository.WeatherEngineRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -31,7 +33,8 @@ data class PersonaPickerUiState(
 
 class PersonaPickerViewModel(
     private val settingsStore: SettingsStore,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val repository: WeatherEngineRepository? = null
 ) : ViewModel() {
 
     val availablePersonas = listOf(
@@ -70,7 +73,25 @@ class PersonaPickerViewModel(
     fun loadCurrentPersonas() {
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
         viewModelScope.launch(ioDispatcher) {
-            val saved = settingsStore.selectedPersonasFlow.first()
+            var saved = settingsStore.selectedPersonasFlow.first()
+            val token = settingsStore.tokenFlow.first()
+            val mock = settingsStore.isMockModeFlow.first()
+
+            if (repository != null && (mock || !token.isNullOrBlank())) {
+                when (val remoteResult = repository.getPersonas()) {
+                    is NetworkResult.Success -> {
+                        val remoteCodes = remoteResult.data.map { it.code }.toSet()
+                        if (remoteCodes.isNotEmpty()) {
+                            saved = remoteCodes
+                            settingsStore.saveSelectedPersonas(remoteCodes)
+                        }
+                    }
+                    is NetworkResult.Failure -> {
+                        // Fall back to locally cached personas if offline
+                    }
+                }
+            }
+
             _uiState.update {
                 it.copy(
                     isLoading = false,
@@ -103,6 +124,30 @@ class PersonaPickerViewModel(
 
         viewModelScope.launch(ioDispatcher) {
             try {
+                val token = settingsStore.tokenFlow.first()
+                val mock = settingsStore.isMockModeFlow.first()
+
+                if (repository != null && (mock || !token.isNullOrBlank())) {
+                    when (val result = repository.setPersonas(currentSelected.toList())) {
+                        is NetworkResult.Success -> {
+                            val confirmed = result.data.map { it.code }.toSet()
+                            settingsStore.saveSelectedPersonas(confirmed.ifEmpty { currentSelected })
+                            _uiState.update { it.copy(isSaving = false) }
+                            _navigateHome.tryEmit(Unit)
+                            return@launch
+                        }
+                        is NetworkResult.Failure -> {
+                            _uiState.update {
+                                it.copy(
+                                    isSaving = false,
+                                    errorMessage = result.message
+                                )
+                            }
+                            return@launch
+                        }
+                    }
+                }
+
                 settingsStore.saveSelectedPersonas(currentSelected)
                 _uiState.update { it.copy(isSaving = false) }
                 _navigateHome.tryEmit(Unit)

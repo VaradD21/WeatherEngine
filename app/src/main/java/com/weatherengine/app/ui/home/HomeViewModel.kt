@@ -54,7 +54,7 @@ class HomeViewModel(
 ) : ViewModel() {
 
     companion object {
-        const val USE_BACKEND_WIDGETS = false
+        const val USE_BACKEND_WIDGETS = true
     }
 
     private val json = Json { ignoreUnknownKeys = true }

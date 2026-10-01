@@ -3,6 +3,7 @@ package com.weatherengine.app.data.repository
 import com.weatherengine.app.core.Formatters
 import com.weatherengine.app.core.forecast.ForecastMapper
 import com.weatherengine.app.core.forecast.ForecastUi
+import com.weatherengine.app.data.api.ApiService
 import com.weatherengine.app.data.api.FailureKind
 import com.weatherengine.app.data.api.NetworkResult
 import com.weatherengine.app.data.local.SettingsStore
@@ -22,7 +23,8 @@ import java.util.Locale
 class OpenMeteoForecastRepository(
     private val apiService: OpenMeteoApiService,
     private val settingsStore: SettingsStore,
-    private val airQualityUrl: String = OpenMeteoClient.DEFAULT_AIR_QUALITY_URL
+    private val airQualityUrl: String = OpenMeteoClient.DEFAULT_AIR_QUALITY_URL,
+    private val backendApiProvider: (() -> ApiService)? = null
 ) : ForecastRepository {
 
     companion object {
@@ -56,7 +58,38 @@ class OpenMeteoForecastRepository(
             }
         }
 
-        // 2. Fetch fresh forecast & air quality concurrently
+        // 2. Try Cloud Backend (/api/weather) first when configured and not in mock mode
+        val isMock = try {
+            settingsStore.isMockModeFlow.first()
+        } catch (_: Exception) {
+            false
+        }
+
+        if (backendApiProvider != null && !isMock) {
+            try {
+                val backendResponse = backendApiProvider.invoke().getWeather(lat = lat, lon = lon)
+                if (backendResponse.isSuccessful) {
+                    val bundle = backendResponse.body()
+                    if (bundle != null && bundle.forecast.current != null) {
+                        val forecastUi = ForecastMapper.mapToForecastUi(
+                            forecastResponse = bundle.forecast,
+                            airQualityResponse = bundle.airQuality,
+                            locationLabel = locationLabel,
+                            timestampMs = now
+                        )
+                        try {
+                            val serialized = json.encodeToString(forecastUi)
+                            settingsStore.cacheForecast(locKey, serialized, now)
+                        } catch (_: Exception) {}
+                        return NetworkResult.Success(forecastUi)
+                    }
+                }
+            } catch (_: Exception) {
+                // Fall back to direct provider / offline cache if backend is unreachable
+            }
+        }
+
+        // 3. Fetch fresh forecast & air quality concurrently
         return try {
             coroutineScope {
                 val forecastDeferred = async {
