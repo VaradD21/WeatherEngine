@@ -6,6 +6,7 @@ import com.weatherengine.app.data.model.LoginRequest
 import com.weatherengine.app.data.model.PersonaDto
 import com.weatherengine.app.data.model.SetPersonasRequest
 import com.weatherengine.app.data.model.SignupRequest
+import com.weatherengine.app.data.model.WeatherBundleDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -37,4 +38,10 @@ interface ApiService {
         @Query("lat") lat: Double,
         @Query("lon") lon: Double
     ): Response<HomepageResponse>
+
+    @GET("api/weather")
+    suspend fun getWeather(
+        @Query("lat") lat: Double,
+        @Query("lon") lon: Double
+    ): Response<WeatherBundleDto>
 }

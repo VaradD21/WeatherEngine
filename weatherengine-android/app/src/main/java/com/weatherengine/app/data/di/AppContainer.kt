@@ -111,7 +111,8 @@ class AppContainer(private val context: Context) {
     val forecastRepository: ForecastRepository by lazy {
         OpenMeteoForecastRepository(
             apiService = openMeteoClient.apiService,
-            settingsStore = settingsStore
+            settingsStore = settingsStore,
+            backendApiProvider = { getApiService() }
         )
     }
 

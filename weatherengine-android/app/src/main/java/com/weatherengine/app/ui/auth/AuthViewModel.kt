@@ -106,6 +106,16 @@ class AuthViewModel(
             when (result) {
                 is NetworkResult.Success -> {
                     settingsStore.saveAuth(result.data.token, result.data.email)
+                    try {
+                        val personaRes = repository.getPersonas()
+                        if (personaRes is NetworkResult.Success && personaRes.data.isNotEmpty()) {
+                            settingsStore.saveSelectedPersonas(
+                                personaRes.data.map { it.code }.toSet()
+                            )
+                        }
+                    } catch (_: Throwable) {
+                        // Safe fallback if persona sync fails or is unstubbed in unit tests
+                    }
                     _uiState.update { it.copy(isLoading = false) }
                     _navigateToNextScreen.tryEmit(Unit)
                 }

@@ -3,30 +3,20 @@
 *.env
 !.env.example
 firebase-service-account.json
-*.jks
-*.keystore
 
 # Gradle & Build Outputs
+build/
 .gradle/
-**/build/
-!**/src/**/build/
-out/
 .kotlin/
+out/
 *.class
-*.ap_
-*.dex
-*.apk
-*.aab
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
 
-# Android Studio / IntelliJ / VS Code
+# IDE & Editors
 .idea/
 *.iml
 .vscode/
-local.properties
-captures/
-.externalNativeBuild/
-.cxx/
-.navigation/
 
 # OS & Logs
 .DS_Store

@@ -1,10 +1,34 @@
+# Gradle & Build Outputs
 *.iml
-.gradle
+.gradle/
+.kotlin/
+/build/
+app/build/
+out/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Local Configuration & Secrets
 /local.properties
-/.idea
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
 local.properties
+.env
+*.env
+*.jks
+*.keystore
+google-services.json
+
+# Android Studio / IntelliJ / VS Code
+/.idea/
+.idea/
+.vscode/
+/captures/
+.externalNativeBuild/
+.cxx/
+.navigation/
+
+# OS & Logs
+.DS_Store
+Thumbs.db
+*.log
