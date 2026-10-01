@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: weatherengine-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SPRING_CACHE_TYPE
+        value: redis
+      - key: DATABASE_URL
+        fromDatabase:
+          name: weatherengine-db
+          property: connectionString
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: weatherengine-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: weatherengine-redis
+          property: port
+
+  - type: redis
+    name: weatherengine-redis
+    ipAllowList: []
+    plan: free
+
+databases:
+  - name: weatherengine-db
+    databaseName: weatherengine
+    user: weatherengine
+    plan: free

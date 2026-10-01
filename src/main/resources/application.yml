@@ -1,0 +1,69 @@
+spring:
+  application:
+    name: weatherengine-backend
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/weatherengine}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate # schema.sql is the source of truth, not Hibernate auto-generation
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  cache:
+    type: ${SPRING_CACHE_TYPE:redis}
+    redis:
+      time-to-live: 900000 # 15 min, matches the caching strategy in the project plan
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:weatherengine-dev-secret-key-must-be-at-least-32-bytes-long}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24h
+
+  weather-providers:
+    open-meteo:
+      forecast-url: ${OPEN_METEO_FORECAST_URL:https://api.open-meteo.com/v1/forecast}
+      air-quality-url: ${OPEN_METEO_AIR_QUALITY_URL:https://air-quality-api.open-meteo.com/v1/air-quality}
+    openweathermap:
+      api-key: ${OPENWEATHERMAP_API_KEY:}
+    waqi:
+      api-key: ${WAQI_API_KEY:}
+    openuv:
+      api-key: ${OPENUV_API_KEY:}
+
+  fcm:
+    credentials-path: ${FCM_CREDENTIALS_PATH:}
+
+logging:
+  level:
+    com.weatherengine: DEBUG

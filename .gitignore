@@ -1,0 +1,24 @@
+# Environment & Secrets
+.env
+*.env
+!.env.example
+firebase-service-account.json
+
+# Gradle & Build Outputs
+build/
+.gradle/
+.kotlin/
+out/
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE & Editors
+.idea/
+*.iml
+.vscode/
+
+# OS & Logs
+.DS_Store
+Thumbs.db
+*.log
