@@ -59,15 +59,24 @@ class AuthViewModel(
     }
 
     fun toggleAuthMode() {
+        setAuthMode(!_uiState.value.isSignUp)
+    }
+
+    fun setAuthMode(isSignUp: Boolean) {
         _uiState.update {
+            if (it.isSignUp == isSignUp) return@update it
             it.copy(
-                isSignUp = !it.isSignUp,
+                isSignUp = isSignUp,
                 emailError = null,
                 passwordError = null,
                 generalError = null,
                 showMockModeOption = false
             )
         }
+    }
+
+    fun skipForNow() {
+        _navigateToNextScreen.tryEmit(Unit)
     }
 
     fun enableMockMode() {

@@ -1,10 +1,14 @@
 # Environment & Secrets
 .env
 *.env
+.env.*
 !.env.example
 firebase-service-account.json
+google-services.json
 *.jks
 *.keystore
+*.pem
+*.key
 
 # Gradle & Build Outputs
 .gradle/
@@ -28,7 +32,14 @@ captures/
 .cxx/
 .navigation/
 
-# OS & Logs
+# Local Databases & Logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+hs_err_pid*
+replay_pid*
+
+# OS Files
 .DS_Store
 Thumbs.db
-*.log
