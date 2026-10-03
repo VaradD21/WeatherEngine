@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
 fun WeatherEngineAppNav(app: ComponentActivity) {
     val appContainer = (app.application as WeatherEngineApp).appContainer
     val navController = rememberNavController()
-    val startDestination = Screen.Home.route
+    val startDestination = Screen.Auth.route
 
     LaunchedEffect(Unit) {
         appContainer.remoteRepository.sessionExpiredEvents.collect {
@@ -76,13 +76,15 @@ fun WeatherEngineAppNav(app: ComponentActivity) {
                     }
                 }
             )
+            val navigateToHome = {
+                navController.navigate(Screen.Home.route) {
+                    popUpTo(Screen.Auth.route) { inclusive = true }
+                }
+            }
             AuthScreen(
                 viewModel = authVm,
-                onAuthSuccess = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Auth.route) { inclusive = true }
-                    }
-                }
+                onAuthSuccess = navigateToHome,
+                onSkip = navigateToHome
             )
         }
 

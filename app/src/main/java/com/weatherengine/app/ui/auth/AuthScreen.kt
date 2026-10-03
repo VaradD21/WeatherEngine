@@ -2,6 +2,7 @@ package com.weatherengine.app.ui.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,12 +18,15 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,7 +51,8 @@ import com.weatherengine.app.ui.components.MockBanner
 @Composable
 fun AuthScreen(
     viewModel: AuthViewModel,
-    onAuthSuccess: () -> Unit
+    onAuthSuccess: () -> Unit,
+    onSkip: () -> Unit = onAuthSuccess
 ) {
     val state by viewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
@@ -82,13 +87,35 @@ fun AuthScreen(
                 color = MaterialTheme.colorScheme.primary
             )
 
+            Spacer(modifier = Modifier.height(4.dp))
+
             Text(
-                text = if (state.isSignUp) "Create your account" else "Sign in to your account",
-                style = MaterialTheme.typography.bodyLarge,
+                text = if (state.isSignUp) "Create your account to sync personas & locations"
+                else "Sign in to sync your personalized weather dashboard",
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Login / Sign Up Mode Tabs
+            TabRow(
+                selectedTabIndex = if (state.isSignUp) 1 else 0,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Tab(
+                    selected = !state.isSignUp,
+                    onClick = { viewModel.setAuthMode(false) },
+                    text = { Text("Log In", fontWeight = FontWeight.SemiBold) }
+                )
+                Tab(
+                    selected = state.isSignUp,
+                    onClick = { viewModel.setAuthMode(true) },
+                    text = { Text("Sign Up", fontWeight = FontWeight.SemiBold) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Email input
             OutlinedTextField(
@@ -164,7 +191,7 @@ fun AuthScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Submit Button
+            // Submit Button (Log In / Sign Up)
             Button(
                 onClick = {
                     focusManager.clearFocus()
@@ -186,17 +213,49 @@ fun AuthScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Mode Toggle
+            // Mode Toggle link
             TextButton(
                 onClick = { viewModel.toggleAuthMode() },
-                modifier = Modifier.height(48.dp)
+                modifier = Modifier.height(40.dp)
             ) {
                 Text(
                     if (state.isSignUp) "Already have an account? Log In"
                     else "Don't have an account? Sign Up"
                 )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HorizontalDivider(modifier = Modifier.weight(1f))
+                Text(
+                    text = "OR",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Skip for now Button
+            OutlinedButton(
+                onClick = {
+                    focusManager.clearFocus()
+                    onSkip()
+                },
+                enabled = !state.isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) {
+                Text("Skip for now")
             }
         }
     }
