@@ -1,8 +1,7 @@
 package com.weatherengine.app.persona
 
+import com.weatherengine.app.core.Formatters
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlin.math.roundToInt
 
 object RunningRules {
@@ -43,8 +42,8 @@ object RunningRules {
 
         val firstRow = candidates[bestIndex].first
         val secondRow = candidates[bestIndex + 1].first
-        val startLabel = formatHourCompact(firstRow.timeIso)
-        val endLabel = formatHourCompact(plusOneHour(secondRow.timeIso))
+        val startLabel = Formatters.formatHourCompact(firstRow.timeIso)
+        val endLabel = Formatters.formatHourCompact(plusOneHour(secondRow.timeIso))
         val reasons = extractRunningReasons(firstRow, secondRow)
 
         return BestRunningResult.Optimal(startLabel, endLabel, finalScore, reasons)
@@ -128,15 +127,6 @@ object RunningRules {
         return list.take(2)
     }
 
-    private fun formatHourCompact(iso: String): String {
-        return try {
-            val time = LocalDateTime.parse(iso)
-            time.format(DateTimeFormatter.ofPattern("h a", Locale.US))
-        } catch (_: Exception) {
-            iso
-        }
-    }
-
     private fun plusOneHour(iso: String): String {
         return try {
             val time = LocalDateTime.parse(iso)
@@ -146,3 +136,4 @@ object RunningRules {
         }
     }
 }
+

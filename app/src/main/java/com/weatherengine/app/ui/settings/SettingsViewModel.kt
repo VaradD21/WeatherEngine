@@ -15,11 +15,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
-    val baseUrl: String = SettingsStore.DEFAULT_BASE_URL,
     val isEmulatorPreset: Boolean = true,
     val customUrl: String = "",
     val customUrlError: String? = null,
-    val isMockMode: Boolean = false,
     val manualLat: String = SettingsStore.DEFAULT_LAT.toString(),
     val manualLon: String = SettingsStore.DEFAULT_LON.toString(),
     val latLonError: String? = null,
@@ -42,16 +40,10 @@ class SettingsViewModel(
                 val isEmulator = url == SettingsStore.DEFAULT_BASE_URL
                 _uiState.update {
                     it.copy(
-                        baseUrl = url,
                         isEmulatorPreset = isEmulator,
                         customUrl = if (!isEmulator) url else it.customUrl
                     )
                 }
-            }
-        }
-        viewModelScope.launch {
-            settingsStore.isMockModeFlow.collect { mock ->
-                _uiState.update { it.copy(isMockMode = mock) }
             }
         }
         viewModelScope.launch {
@@ -90,12 +82,6 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsStore.setBaseUrl(normalized)
             _uiState.update { it.copy(customUrl = normalized, customUrlError = null, feedbackMessage = "Server URL updated") }
-        }
-    }
-
-    fun setMockMode(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsStore.setMockMode(enabled)
         }
     }
 

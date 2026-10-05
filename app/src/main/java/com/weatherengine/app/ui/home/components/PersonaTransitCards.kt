@@ -1,11 +1,7 @@
 package com.weatherengine.app.ui.home.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -35,8 +31,7 @@ import com.weatherengine.app.ui.theme.SuccessGreen
 @Composable
 fun RenderPersonaWidget(
     widgetType: PersonaWidgetType,
-    forecast: ForecastUi,
-    modifier: Modifier = Modifier
+    forecast: ForecastUi
 ) {
     when (widgetType) {
         PersonaWidgetType.AQI -> AqiPersonaCard(forecast)

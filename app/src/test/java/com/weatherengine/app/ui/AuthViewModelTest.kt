@@ -5,8 +5,6 @@ import com.weatherengine.app.data.api.FailureKind
 import com.weatherengine.app.data.api.NetworkResult
 import com.weatherengine.app.data.local.SettingsStore
 import com.weatherengine.app.data.model.AuthResponse
-import com.weatherengine.app.data.model.HomepageResponse
-import com.weatherengine.app.data.model.PersonaDto
 import com.weatherengine.app.data.repository.WeatherEngineRepository
 import com.weatherengine.app.ui.auth.AuthViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -21,7 +19,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule

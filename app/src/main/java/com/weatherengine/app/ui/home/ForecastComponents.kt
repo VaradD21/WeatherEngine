@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Air
@@ -28,7 +27,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,12 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weatherengine.app.core.forecast.CurrentWeatherUi
 import com.weatherengine.app.core.forecast.DayForecastUi
-import com.weatherengine.app.core.forecast.ForecastUi
-import com.weatherengine.app.ui.theme.AqiFair
-import com.weatherengine.app.ui.theme.AqiGood
-import com.weatherengine.app.ui.theme.AqiModerate
-import com.weatherengine.app.ui.theme.AqiPoor
-import com.weatherengine.app.ui.theme.AqiVeryPoor
 
 @Composable
 fun CurrentConditionsCard(current: CurrentWeatherUi, updatedAt: String, modifier: Modifier = Modifier) {
@@ -110,7 +102,7 @@ fun CurrentConditionsCard(current: CurrentWeatherUi, updatedAt: String, modifier
                     MetricChip(
                         Icons.Default.Thermostat,
                         "AQI",
-                        "${current.aqi} (${current.aqiCategory ?: ""})"
+                        "${current.aqi} (${current.aqiCategory})"
                     )
                 }
             }
@@ -229,13 +221,11 @@ fun TemperatureRangeBar(
             .clip(RoundedCornerShape(3.dp))
             .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
     ) {
-        val safeStart = fractionStart.coerceIn(0f, 1f)
-        val safeEnd = fractionEnd.coerceIn(safeStart, 1f)
-        val fillWidthFraction = (safeEnd - safeStart).coerceAtLeast(0.05f)
+        val fillWidthFraction = (fractionEnd - fractionStart).coerceAtLeast(0.05f)
 
         Row(modifier = Modifier.fillMaxWidth()) {
-            if (safeStart > 0f) {
-                Spacer(modifier = Modifier.weight(safeStart))
+            if (fractionStart > 0f) {
+                Spacer(modifier = Modifier.weight(fractionStart))
             }
             Box(
                 modifier = Modifier
@@ -252,7 +242,7 @@ fun TemperatureRangeBar(
                         )
                     )
             )
-            val remaining = (1f - safeEnd).coerceAtLeast(0f)
+            val remaining = (1f - fractionEnd).coerceAtLeast(0f)
             if (remaining > 0f) {
                 Spacer(modifier = Modifier.weight(remaining))
             }
@@ -349,7 +339,7 @@ private fun MetricChip(icon: ImageVector, label: String, value: String) {
     }
 }
 
-private fun weatherIconFor(key: String): ImageVector {
+internal fun weatherIconFor(key: String): ImageVector {
     return when (key) {
         "clear_day", "mainly_clear_day" -> Icons.Default.WbSunny
         "clear_night", "mainly_clear_night" -> Icons.Default.WbSunny
@@ -359,3 +349,4 @@ private fun weatherIconFor(key: String): ImageVector {
         else -> Icons.Default.Cloud
     }
 }
+

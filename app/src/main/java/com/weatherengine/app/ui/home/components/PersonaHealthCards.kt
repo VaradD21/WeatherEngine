@@ -1,6 +1,5 @@
 package com.weatherengine.app.ui.home.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,10 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
-import androidx.compose.material.icons.filled.Grain
-import androidx.compose.material.icons.filled.Thermostat
-import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -59,7 +54,7 @@ fun CardShell(
 fun AqiPersonaCard(forecast: ForecastUi) {
     val aqi = forecast.current.aqi
     val pm25 = forecast.current.pm25
-    val category = forecast.current.aqiCategory ?: PersonaRules.usAqiCategory(aqi)
+    val category = forecast.current.aqiCategory
 
     CardShell("Air Quality (US AQI)") {
         if (aqi != null) {

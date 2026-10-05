@@ -1,5 +1,6 @@
 package com.weatherengine.app
 
+import android.app.Application
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -16,17 +17,34 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.weatherengine.app.data.di.AppContainer
 import com.weatherengine.app.data.location.AndroidLocationProvider
 import com.weatherengine.app.ui.auth.AuthScreen
 import com.weatherengine.app.ui.auth.AuthViewModel
 import com.weatherengine.app.ui.home.HomeScreen
 import com.weatherengine.app.ui.home.HomeViewModel
-import com.weatherengine.app.ui.navigation.Screen
 import com.weatherengine.app.ui.personas.PersonaPickerScreen
 import com.weatherengine.app.ui.personas.PersonaPickerViewModel
 import com.weatherengine.app.ui.settings.SettingsScreen
 import com.weatherengine.app.ui.settings.SettingsViewModel
 import com.weatherengine.app.ui.theme.WeatherEngineTheme
+
+class WeatherEngineApp : Application() {
+    lateinit var appContainer: AppContainer
+        private set
+
+    override fun onCreate() {
+        super.onCreate()
+        appContainer = AppContainer(this)
+    }
+}
+
+sealed class Screen(val route: String) {
+    data object Auth : Screen("auth")
+    data object PersonaPicker : Screen("persona_picker")
+    data object Home : Screen("home")
+    data object Settings : Screen("settings")
+}
 
 class MainActivity : ComponentActivity() {
 

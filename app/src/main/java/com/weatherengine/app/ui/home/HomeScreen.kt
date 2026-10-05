@@ -31,7 +31,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,7 +45,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.weatherengine.app.ui.components.MockBanner
 import com.weatherengine.app.ui.home.components.HourlyForecastStrip
 import com.weatherengine.app.ui.home.components.RenderPersonaWidget
 import com.weatherengine.app.ui.theme.AmberWarning
@@ -62,7 +60,6 @@ fun HomeScreen(
     val forecastState by viewModel.forecastState.collectAsState()
     val locationLabel by viewModel.locationLabel.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
-    val isMockMode by viewModel.isMockMode.collectAsState()
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
     val selectedPersonas by viewModel.selectedPersonas.collectAsState()
     val activePersonaWidgets by viewModel.activePersonaWidgets.collectAsState()
@@ -84,54 +81,49 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
-            Column {
-                if (isMockMode) {
-                    MockBanner()
-                }
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(
-                                text = "WeatherEngine",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = "WeatherEngine",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.LocationOn,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(12.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = locationLabel,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(start = 2.dp)
-                                )
-                            }
-                        }
-                    },
-                    actions = {
-                        IconButton(
-                            onClick = { viewModel.loadData(isUserRefresh = true) },
-                            enabled = !isRefreshing
-                        ) {
-                            if (isRefreshing) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(Icons.Default.Refresh, contentDescription = "Refresh weather data")
-                            }
-                        }
-                        IconButton(onClick = onNavigateSettings) {
-                            Icon(Icons.Default.Settings, contentDescription = "Open Settings")
+                            Text(
+                                text = locationLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 2.dp)
+                            )
                         }
                     }
-                )
-            }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { viewModel.loadData(isUserRefresh = true) },
+                        enabled = !isRefreshing
+                    ) {
+                        if (isRefreshing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(Icons.Default.Refresh, contentDescription = "Refresh weather data")
+                        }
+                    }
+                    IconButton(onClick = onNavigateSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Open Settings")
+                    }
+                }
+            )
         }
     ) { innerPadding ->
         Column(
@@ -203,7 +195,6 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                         }
 
-                        // 1. Current Conditions Card
                         item {
                             CurrentConditionsCard(
                                 current = forecast.current,
@@ -211,12 +202,10 @@ fun HomeScreen(
                             )
                         }
 
-                        // 2. 24-Hour Hourly Forecast Strip
                         item {
                             HourlyForecastStrip(hours = forecast.hourly)
                         }
 
-                        // 3. "For you" Section with On-Device Persona Engine
                         if (selectedPersonas.isEmpty()) {
                             item {
                                 Card(
@@ -265,18 +254,15 @@ fun HomeScreen(
                             }
                         }
 
-                        // 4. 7-Day Forecast Card
                         item {
                             SevenDayForecastCard(days = forecast.days)
                         }
 
-                        // 5. Open-Meteo Attribution
                         item {
                             OpenMeteoAttributionCard()
                         }
 
-                        // 6. Optional Personalize/Sign-in card for backend sync
-                        if (!isAuthenticated && !isMockMode) {
+                        if (!isAuthenticated) {
                             item {
                                 PersonalizeBannerCard(onNavigateAuth = onNavigateAuth)
                             }

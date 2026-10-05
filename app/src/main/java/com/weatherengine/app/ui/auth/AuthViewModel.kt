@@ -3,7 +3,6 @@ package com.weatherengine.app.ui.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.weatherengine.app.core.Validators
-import com.weatherengine.app.data.api.FailureKind
 import com.weatherengine.app.data.api.NetworkResult
 import com.weatherengine.app.data.local.SettingsStore
 import com.weatherengine.app.data.repository.WeatherEngineRepository
@@ -25,9 +24,7 @@ data class AuthUiState(
     val isLoading: Boolean = false,
     val emailError: String? = null,
     val passwordError: String? = null,
-    val generalError: String? = null,
-    val showMockModeOption: Boolean = false,
-    val isMockMode: Boolean = false
+    val generalError: String? = null
 )
 
 class AuthViewModel(
@@ -41,14 +38,6 @@ class AuthViewModel(
 
     private val _navigateToNextScreen = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val navigateToNextScreen: SharedFlow<Unit> = _navigateToNextScreen.asSharedFlow()
-
-    init {
-        viewModelScope.launch {
-            settingsStore.isMockModeFlow.collect { mock ->
-                _uiState.update { it.copy(isMockMode = mock) }
-            }
-        }
-    }
 
     fun onEmailChanged(email: String) {
         _uiState.update { it.copy(email = email, emailError = null, generalError = null) }
@@ -69,20 +58,8 @@ class AuthViewModel(
                 isSignUp = isSignUp,
                 emailError = null,
                 passwordError = null,
-                generalError = null,
-                showMockModeOption = false
+                generalError = null
             )
-        }
-    }
-
-    fun skipForNow() {
-        _navigateToNextScreen.tryEmit(Unit)
-    }
-
-    fun enableMockMode() {
-        viewModelScope.launch {
-            settingsStore.setMockMode(true)
-            _uiState.update { it.copy(showMockModeOption = false, generalError = null) }
         }
     }
 
@@ -103,7 +80,7 @@ class AuthViewModel(
             return
         }
 
-        _uiState.update { it.copy(isLoading = true, generalError = null, showMockModeOption = false) }
+        _uiState.update { it.copy(isLoading = true, generalError = null) }
 
         viewModelScope.launch(ioDispatcher) {
             val result = if (currentState.isSignUp) {
@@ -129,12 +106,10 @@ class AuthViewModel(
                     _navigateToNextScreen.tryEmit(Unit)
                 }
                 is NetworkResult.Failure -> {
-                    val showMock = result.kind == FailureKind.Network || result.kind == FailureKind.Timeout
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            generalError = result.message,
-                            showMockModeOption = showMock
+                            generalError = result.message
                         )
                     }
                 }

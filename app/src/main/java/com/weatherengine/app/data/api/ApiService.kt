@@ -7,11 +7,51 @@ import com.weatherengine.app.data.model.PersonaDto
 import com.weatherengine.app.data.model.SetPersonasRequest
 import com.weatherengine.app.data.model.SignupRequest
 import com.weatherengine.app.data.model.WeatherBundleDto
+import okhttp3.Interceptor
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
+
+sealed class NetworkResult<out T> {
+    data class Success<out T>(val data: T) : NetworkResult<T>()
+    data class Failure(val kind: FailureKind, val message: String) : NetworkResult<Nothing>()
+}
+
+enum class FailureKind {
+    Network,
+    Timeout,
+    Unauthorized,
+    Client,
+    Server,
+    Parse
+}
+
+class AuthInterceptor(
+    private val tokenProvider: () -> String?
+) : Interceptor {
+
+    override fun intercept(chain: Interceptor.Chain): okhttp3.Response {
+        val originalRequest = chain.request()
+        val path = originalRequest.url.encodedPath
+
+        // Do not attach Authorization header to authentication endpoints
+        if (path.contains("/api/auth/")) {
+            return chain.proceed(originalRequest)
+        }
+
+        val token = tokenProvider()
+        return if (!token.isNullOrBlank()) {
+            val authenticatedRequest = originalRequest.newBuilder()
+                .header("Authorization", "Bearer $token")
+                .build()
+            chain.proceed(authenticatedRequest)
+        } else {
+            chain.proceed(originalRequest)
+        }
+    }
+}
 
 interface ApiService {
 

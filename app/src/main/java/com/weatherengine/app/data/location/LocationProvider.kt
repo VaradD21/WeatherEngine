@@ -5,11 +5,11 @@ import android.content.Context
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
-import android.os.Build
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.tasks.Task
+import com.weatherengine.app.data.local.SettingsStore
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
@@ -29,6 +29,18 @@ interface LocationProvider {
 }
 
 class AndroidLocationProvider(private val context: Context) : LocationProvider {
+
+    companion object {
+        fun resolveLocationLabel(lat: Double, lon: Double, placeName: String = ""): String {
+            if (placeName.isNotBlank()) return placeName
+            if (abs(lat - SettingsStore.DEFAULT_LAT) < 0.1 && abs(lon - SettingsStore.DEFAULT_LON) < 0.1) {
+                return "Mumbai, Maharashtra"
+            }
+            val latDir = if (lat >= 0) "N" else "S"
+            val lonDir = if (lon >= 0) "E" else "W"
+            return String.format(Locale.US, "%.2f°%s, %.2f°%s", abs(lat), latDir, abs(lon), lonDir)
+        }
+    }
 
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
@@ -54,7 +66,7 @@ class AndroidLocationProvider(private val context: Context) : LocationProvider {
                     DeviceLocation(
                         latitude = loc.latitude,
                         longitude = loc.longitude,
-                        label = getFriendlyLocationLabel(loc.latitude, loc.longitude)
+                        label = getPlaceName(loc.latitude, loc.longitude)
                     )
                 }
             }
@@ -64,10 +76,6 @@ class AndroidLocationProvider(private val context: Context) : LocationProvider {
     }
 
     override suspend fun getPlaceName(lat: Double, lon: Double): String {
-        return getFriendlyLocationLabel(lat, lon)
-    }
-
-    private fun getFriendlyLocationLabel(lat: Double, lon: Double): String {
         return try {
             val geocoder = Geocoder(context, Locale.getDefault())
             @Suppress("DEPRECATION")
@@ -85,27 +93,14 @@ class AndroidLocationProvider(private val context: Context) : LocationProvider {
                     !subLocality.isNullOrBlank() -> subLocality
                     !adminArea.isNullOrBlank() -> adminArea
                     !address.featureName.isNullOrBlank() -> address.featureName
-                    else -> knownCityOrFallback(lat, lon)
+                    else -> resolveLocationLabel(lat, lon)
                 }
             } else {
-                knownCityOrFallback(lat, lon)
+                resolveLocationLabel(lat, lon)
             }
         } catch (_: Exception) {
-            knownCityOrFallback(lat, lon)
+            resolveLocationLabel(lat, lon)
         }
-    }
-
-    private fun knownCityOrFallback(lat: Double, lon: Double): String {
-        if (abs(lat - 19.0760) < 0.1 && abs(lon - 72.8777) < 0.1) {
-            return "Mumbai, Maharashtra"
-        }
-        return formatCoordinateFallback(lat, lon)
-    }
-
-    private fun formatCoordinateFallback(lat: Double, lon: Double): String {
-        val latDir = if (lat >= 0) "N" else "S"
-        val lonDir = if (lon >= 0) "E" else "W"
-        return String.format(Locale.US, "%.2f°%s, %.2f°%s", abs(lat), latDir, abs(lon), lonDir)
     }
 
     private suspend fun <T> Task<T>.await(): T = suspendCancellableCoroutine { continuation ->

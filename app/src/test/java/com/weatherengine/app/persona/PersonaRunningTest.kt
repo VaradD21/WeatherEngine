@@ -36,7 +36,7 @@ class PersonaRunningTest {
             }
         }
 
-        val result = PersonaRules.bestRunningWindow(hours)
+        val result = RunningRules.bestRunningWindow(hours)
         assertTrue(result is BestRunningResult.Optimal)
         val optimal = result as BestRunningResult.Optimal
         assertEquals("6 AM", optimal.startHourLabel)
@@ -56,7 +56,7 @@ class PersonaRunningTest {
             }
         }
 
-        val result = PersonaRules.bestRunningWindow(hours)
+        val result = RunningRules.bestRunningWindow(hours)
         assertTrue(result is BestRunningResult.Optimal)
         val optimal = result as BestRunningResult.Optimal
         assertEquals("5 PM", optimal.startHourLabel)
@@ -74,7 +74,7 @@ class PersonaRunningTest {
             }
         }
 
-        val result = PersonaRules.bestRunningWindow(hours)
+        val result = RunningRules.bestRunningWindow(hours)
         assertTrue(result is BestRunningResult.Optimal)
         val optimal = result as BestRunningResult.Optimal
         assertEquals("4 PM", optimal.startHourLabel)
@@ -88,7 +88,7 @@ class PersonaRunningTest {
             row.copy(apparentTempRaw = 40.0, precipProb = 80, aqi = 250) // Horrible weather all day
         }
 
-        val result = PersonaRules.bestRunningWindow(hours)
+        val result = RunningRules.bestRunningWindow(hours)
         assertTrue(result is BestRunningResult.NoGoodWindow)
         val noGood = result as BestRunningResult.NoGoodWindow
         assertTrue(noGood.reason.isNotBlank())
@@ -100,7 +100,7 @@ class PersonaRunningTest {
             row.copy(apparentTempRaw = 20.0, weatherCode = 95) // Cool but thunderstorm
         }
 
-        val result = PersonaRules.bestRunningWindow(hours)
+        val result = RunningRules.bestRunningWindow(hours)
         assertTrue(result is BestRunningResult.NoGoodWindow)
         val noGood = result as BestRunningResult.NoGoodWindow
         assertEquals("Thunderstorms expected", noGood.reason)
@@ -112,7 +112,7 @@ class PersonaRunningTest {
             row.copy(apparentTempRaw = null, windKmh = null, uvIndex = null, aqi = null, visibilityM = null)
         }
 
-        val result = PersonaRules.bestRunningWindow(hours)
+        val result = RunningRules.bestRunningWindow(hours)
         assertTrue(result is BestRunningResult.Optimal)
     }
 
@@ -128,7 +128,7 @@ class PersonaRunningTest {
             )
         )
 
-        val result = PersonaRules.bestRunningWindow(fewHours)
+        val result = RunningRules.bestRunningWindow(fewHours)
         assertTrue(result is BestRunningResult.NoGoodWindow)
         assertEquals("Not enough daylight hours remaining", (result as BestRunningResult.NoGoodWindow).reason)
     }

@@ -160,14 +160,14 @@ class PersonaRulesTest {
         }
 
         // Clear
-        val clearStatus = PersonaRules.stormFogStatus(baseHours, "2026-09-28T00:00")
+        val clearStatus = PersonaRules.stormFogStatus(baseHours)
         assertFalse(clearStatus.alertActive)
 
         // Thunderstorm at hour 3
         val stormHours = baseHours.mapIndexed { idx, row ->
             if (idx == 3) row.copy(weatherCode = 95) else row
         }
-        val stormStatus = PersonaRules.stormFogStatus(stormHours, "2026-09-28T00:00")
+        val stormStatus = PersonaRules.stormFogStatus(stormHours)
         assertTrue(stormStatus.alertActive)
         assertTrue(stormStatus.message.contains("Thunderstorm"))
 
@@ -175,7 +175,7 @@ class PersonaRulesTest {
         val fogHours = baseHours.mapIndexed { idx, row ->
             if (idx == 2) row.copy(weatherCode = 45) else row
         }
-        val fogStatus = PersonaRules.stormFogStatus(fogHours, "2026-09-28T00:00")
+        val fogStatus = PersonaRules.stormFogStatus(fogHours)
         assertTrue(fogStatus.alertActive)
         assertTrue(fogStatus.message.contains("Fog"))
 
@@ -183,7 +183,7 @@ class PersonaRulesTest {
         val lowVisHours = baseHours.mapIndexed { idx, row ->
             if (idx == 1) row.copy(visibilityM = 800.0) else row
         }
-        val lowVisStatus = PersonaRules.stormFogStatus(lowVisHours, "2026-09-28T00:00")
+        val lowVisStatus = PersonaRules.stormFogStatus(lowVisHours)
         assertTrue(lowVisStatus.alertActive)
     }
 

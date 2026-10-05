@@ -8,8 +8,8 @@ import com.weatherengine.app.persona.HourlyRowUi
 import com.weatherengine.app.persona.PersonaConstants
 import com.weatherengine.app.persona.PersonaRules
 import com.weatherengine.app.persona.PollenInfo
+import com.weatherengine.app.persona.RunningRules
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -25,7 +25,7 @@ object ForecastMapper {
         }
     }
 
-    fun dayLabel(dateIso: String, index: Int, @Suppress("UNUSED_PARAMETER") today: LocalDate = LocalDate.now()): String {
+    fun dayLabel(dateIso: String, index: Int): String {
         if (index == 0) return "Today"
         if (index == 1) return "Tomorrow"
         return try {
@@ -74,7 +74,6 @@ object ForecastMapper {
         val isDay = current?.isDay == 1
         val weatherInfo = WmoWeatherCode.info(current?.weatherCode, isDay = isDay)
 
-        // Sanitize current metrics
         val currentTemp = current?.temperature2m?.takeIf { it in PersonaConstants.MIN_TEMP_C..PersonaConstants.MAX_TEMP_C }
         val currentApparent = current?.apparentTemperature?.takeIf { it in PersonaConstants.MIN_TEMP_C..PersonaConstants.MAX_TEMP_C }
         val currentHumidity = current?.relativeHumidity2m?.takeIf { it in PersonaConstants.MIN_HUMIDITY..PersonaConstants.MAX_HUMIDITY }
@@ -89,10 +88,10 @@ object ForecastMapper {
         val firstDailySunset = forecastResponse.daily?.sunset?.firstOrNull()
         val daylight = PersonaRules.daylightInfo(current?.time, firstDailySunrise, firstDailySunset)
 
-        val bestRunning = PersonaRules.bestRunningWindow(hourly24)
+        val bestRunning = RunningRules.bestRunningWindow(hourly24)
         val next24MaxApparent = hourly24.mapNotNull { it.apparentTempRaw }.maxOrNull()
         val heat = PersonaRules.heatStatus(next24MaxApparent)
-        val stormFog = PersonaRules.stormFogStatus(hourly24, current?.time)
+        val stormFog = PersonaRules.stormFogStatus(hourly24)
         val commute = PersonaRules.commuteRain(hourly24)
         val pollen = mapPollenInfo(airQualityResponse?.current)
 
@@ -108,15 +107,13 @@ object ForecastMapper {
             humidityPercent = currentHumidity,
             windFormatted = currentWind?.let { "$it km/h" } ?: "—",
             windSpeedKmh = currentWind,
-            windGustsFormatted = currentGusts?.let { "Gusts: $it km/h" } ?: "",
             windGustsKmh = currentGusts,
             precipitationFormatted = current?.precipitation?.takeIf { it >= 0.0 }?.let { "$it mm" } ?: "0.0 mm",
             visibilityMeters = currentVisibility,
             uvIndex = currentUv,
             aqi = currentAqi,
             aqiCategory = PersonaRules.usAqiCategory(currentAqi),
-            pm25 = airQualityResponse?.current?.pm25?.takeIf { it >= 0.0 },
-            isDay = isDay
+            pm25 = airQualityResponse?.current?.pm25?.takeIf { it >= 0.0 }
         )
 
         val daysList = buildDaysList(forecastResponse.daily)
@@ -137,7 +134,6 @@ object ForecastMapper {
             pollen = pollen,
             uvMaxToday = uvMaxToday,
             attribution = "Weather data by Open-Meteo.com",
-            attributionUrl = "https://open-meteo.com/",
             isCached = false
         )
     }
@@ -185,23 +181,16 @@ object ForecastMapper {
             val rawPrecip = hourly.precipitationProbability.getOrNull(i)?.takeIf { it in 0..100 }
             val rawCode = hourly.weatherCode.getOrNull(i)
             val rawWind = hourly.windSpeed10m.getOrNull(i)?.takeIf { it >= 0.0 }
-            val rawGusts = hourly.windGusts10m.getOrNull(i)?.takeIf { it >= 0.0 }
             val rawVis = hourly.visibility.getOrNull(i)?.takeIf { it >= PersonaConstants.MIN_VISIBILITY_M }
             val rawUv = hourly.uvIndex.getOrNull(i)?.takeIf { it in PersonaConstants.MIN_UV..PersonaConstants.MAX_UV }
             val isDay = hourly.isDay.getOrNull(i) == 1
 
             val weatherInfo = WmoWeatherCode.info(rawCode, isDay = isDay)
-            val hourLabel = try {
-                val dt = LocalDateTime.parse(iso)
-                dt.format(DateTimeFormatter.ofPattern("h a", Locale.getDefault()))
-            } catch (_: Exception) {
-                iso
-            }
 
             rows.add(
                 HourlyRowUi(
                     timeIso = iso,
-                    timeLabel = hourLabel,
+                    timeLabel = Formatters.formatHourCompact(iso),
                     tempFormatted = formatTemp(rawTemp),
                     tempRaw = rawTemp,
                     apparentTempRaw = rawApparent,
@@ -209,9 +198,7 @@ object ForecastMapper {
                     iconKey = weatherInfo.iconKey,
                     isDay = isDay,
                     precipProb = rawPrecip,
-                    precipProbFormatted = rawPrecip?.let { "$it%" } ?: "",
                     windKmh = rawWind,
-                    windGustsKmh = rawGusts,
                     visibilityM = rawVis,
                     uvIndex = rawUv,
                     aqi = aqiMap[iso],
@@ -227,7 +214,6 @@ object ForecastMapper {
         val minTemps = daily.temperature2mMin
         val maxTemps = daily.temperature2mMax
         val rangeFractions = calculateRangeFractions(minTemps, maxTemps)
-        val today = LocalDate.now()
 
         val count = daily.time.size
         val list = mutableListOf<DayForecastUi>()
@@ -243,20 +229,12 @@ object ForecastMapper {
             list.add(
                 DayForecastUi(
                     dateIso = dateIso,
-                    dayLabel = dayLabel(dateIso, i, today),
+                    dayLabel = dayLabel(dateIso, i),
                     condition = dayWeather.description,
                     iconKey = dayWeather.iconKey,
                     maxTempFormatted = formatTemp(maxTemp),
                     minTempFormatted = formatTemp(minTemp),
-                    maxTempRaw = maxTemp,
-                    minTempRaw = minTemp,
                     precipitationProbability = precipProb,
-                    precipitationProbabilityFormatted = precipProb?.let { "$it%" } ?: "",
-                    precipitationSumMm = daily.precipitationSum.getOrNull(i),
-                    windSpeedMaxKmh = daily.windSpeed10mMax.getOrNull(i),
-                    uvIndexMax = daily.uvIndexMax.getOrNull(i),
-                    sunriseFormatted = Formatters.formatClock(daily.sunrise.getOrNull(i)),
-                    sunsetFormatted = Formatters.formatClock(daily.sunset.getOrNull(i)),
                     rangeFractionStart = fractions.first,
                     rangeFractionEnd = fractions.second
                 )
@@ -276,7 +254,7 @@ object ForecastMapper {
         if (pollens.isEmpty()) {
             return PollenInfo(levelLabel = "Pollen data is not available for this region", isAvailable = false)
         }
-        val (name, value) = pollens.maxByOrNull { it.second } ?: return PollenInfo()
+        val (name, value) = pollens.maxBy { it.second }
         val level = when {
             value < 10.0 -> "Low"
             value < 50.0 -> "Moderate"
@@ -291,3 +269,4 @@ object ForecastMapper {
         )
     }
 }
+

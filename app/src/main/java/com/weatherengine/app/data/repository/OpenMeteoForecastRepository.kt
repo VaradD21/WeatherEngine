@@ -20,6 +20,15 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.util.Locale
 
+interface ForecastRepository {
+    suspend fun getForecast(
+        lat: Double,
+        lon: Double,
+        locationLabel: String,
+        forceRefresh: Boolean = false
+    ): NetworkResult<ForecastUi>
+}
+
 class OpenMeteoForecastRepository(
     private val apiService: OpenMeteoApiService,
     private val settingsStore: SettingsStore,
@@ -58,14 +67,8 @@ class OpenMeteoForecastRepository(
             }
         }
 
-        // 2. Try Cloud Backend (/api/weather) first when configured and not in mock mode
-        val isMock = try {
-            settingsStore.isMockModeFlow.first()
-        } catch (_: Exception) {
-            false
-        }
-
-        if (backendApiProvider != null && !isMock) {
+        // 2. Try Cloud Backend (/api/weather) first when configured
+        if (backendApiProvider != null) {
             try {
                 val backendResponse = backendApiProvider.invoke().getWeather(lat = lat, lon = lon)
                 if (backendResponse.isSuccessful) {
@@ -121,7 +124,6 @@ class OpenMeteoForecastRepository(
                             timestampMs = now
                         )
 
-                        // Persist into cache
                         try {
                             val serialized = json.encodeToString(forecastUi)
                             settingsStore.cacheForecast(locKey, serialized, now)
@@ -162,23 +164,29 @@ class OpenMeteoForecastRepository(
         }
     }
 
+    private suspend fun fallbackToCachedForecast(
+        locKey: String,
+        locationLabel: String,
+        now: Long
+    ): NetworkResult<ForecastUi>? {
+        val cached = getCachedForecast(locKey) ?: return null
+        val mins = Formatters.minutesAgo(cached.timestampMs, now)
+        return NetworkResult.Success(
+            cached.copy(
+                locationLabel = locationLabel,
+                updatedAtLabel = "Showing data from $mins min ago (offline)",
+                isCached = true
+            )
+        )
+    }
+
     private suspend fun handleHttpError(
         statusCode: Int,
         locKey: String,
         locationLabel: String,
         now: Long
     ): NetworkResult<ForecastUi> {
-        val cached = getCachedForecast(locKey)
-        if (cached != null) {
-            val mins = Formatters.minutesAgo(cached.timestampMs, now)
-            return NetworkResult.Success(
-                cached.copy(
-                    locationLabel = locationLabel,
-                    updatedAtLabel = "Showing data from $mins min ago (offline)",
-                    isCached = true
-                )
-            )
-        }
+        fallbackToCachedForecast(locKey, locationLabel, now)?.let { return it }
 
         val kind = when (statusCode) {
             400 -> FailureKind.Client
@@ -196,17 +204,7 @@ class OpenMeteoForecastRepository(
         locationLabel: String,
         now: Long
     ): NetworkResult<ForecastUi> {
-        val cached = getCachedForecast(locKey)
-        if (cached != null) {
-            val mins = Formatters.minutesAgo(cached.timestampMs, now)
-            return NetworkResult.Success(
-                cached.copy(
-                    locationLabel = locationLabel,
-                    updatedAtLabel = "Showing data from $mins min ago (offline)",
-                    isCached = true
-                )
-            )
-        }
+        fallbackToCachedForecast(locKey, locationLabel, now)?.let { return it }
 
         val (kind, message) = when (e) {
             is UnknownHostException -> Pair(FailureKind.Network, "No internet connection")
@@ -217,3 +215,4 @@ class OpenMeteoForecastRepository(
         return NetworkResult.Failure(kind, message)
     }
 }
+

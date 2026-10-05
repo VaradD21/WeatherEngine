@@ -27,7 +27,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -38,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.weatherengine.app.ui.components.MockBanner
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,19 +56,14 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            Column {
-                if (state.isMockMode) {
-                    MockBanner()
-                }
-                TopAppBar(
-                    title = { Text("Settings", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
+            TopAppBar(
+                title = { Text("Settings", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                )
-            }
+                }
+            )
         }
     ) { innerPadding ->
         Column(
@@ -83,7 +76,6 @@ fun SettingsScreen(
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Feedback Message
             state.feedbackMessage?.let {
                 Text(
                     text = it,
@@ -93,7 +85,6 @@ fun SettingsScreen(
                 )
             }
 
-            // Server Target Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -148,34 +139,6 @@ fun SettingsScreen(
                 }
             }
 
-            // Mock Mode Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Mock Mode", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(
-                            "Uses simulated in-memory sample data without connecting to a server.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Switch(
-                        checked = state.isMockMode,
-                        onCheckedChange = { viewModel.setMockMode(it) }
-                    )
-                }
-            }
-
-            // Location Coordinates Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -218,7 +181,6 @@ fun SettingsScreen(
                 }
             }
 
-            // Personas Management
             OutlinedButton(
                 onClick = onNavigatePersonas,
                 modifier = Modifier
@@ -230,7 +192,6 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
-            // Logout
             Button(
                 onClick = { viewModel.logout() },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),

@@ -3,7 +3,6 @@ package com.weatherengine.app.data.local
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
@@ -27,7 +26,6 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
         val KEY_TOKEN = stringPreferencesKey("auth_token")
         val KEY_EMAIL = stringPreferencesKey("auth_email")
         val KEY_BASE_URL = stringPreferencesKey("base_url")
-        val KEY_MOCK_MODE = booleanPreferencesKey("mock_mode")
         val KEY_MANUAL_LAT = doublePreferencesKey("manual_lat")
         val KEY_MANUAL_LON = doublePreferencesKey("manual_lon")
         val KEY_CACHED_HOMEPAGE_JSON = stringPreferencesKey("cached_homepage_json")
@@ -56,15 +54,12 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
         }
 
     val tokenFlow: Flow<String?> = safePreferences.map { it[KEY_TOKEN] }
-    val emailFlow: Flow<String?> = safePreferences.map { it[KEY_EMAIL] }
     val baseUrlFlow: Flow<String> = safePreferences.map { it[KEY_BASE_URL] ?: DEFAULT_BASE_URL }
-    val isMockModeFlow: Flow<Boolean> = safePreferences.map { it[KEY_MOCK_MODE] ?: false }
     val manualLatFlow: Flow<Double> = safePreferences.map { it[KEY_MANUAL_LAT] ?: DEFAULT_LAT }
     val manualLonFlow: Flow<Double> = safePreferences.map { it[KEY_MANUAL_LON] ?: DEFAULT_LON }
     val cachedHomepageJsonFlow: Flow<String?> = safePreferences.map { it[KEY_CACHED_HOMEPAGE_JSON] }
     val cachedHomepageTimeFlow: Flow<Long?> = safePreferences.map { it[KEY_CACHED_HOMEPAGE_TIME] }
     val cachedForecastJsonFlow: Flow<String?> = safePreferences.map { it[KEY_CACHED_FORECAST_JSON] }
-    val cachedForecastTimeFlow: Flow<Long?> = safePreferences.map { it[KEY_CACHED_FORECAST_TIME] }
     val cachedForecastLocKeyFlow: Flow<String?> = safePreferences.map { it[KEY_CACHED_FORECAST_LOC_KEY] }
     val cachedForecastSchemaFlow: Flow<Int?> = safePreferences.map { it[KEY_CACHED_FORECAST_SCHEMA] }
 
@@ -97,12 +92,6 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
     suspend fun setBaseUrl(url: String) {
         dataStore.edit { prefs ->
             prefs[KEY_BASE_URL] = url
-        }
-    }
-
-    suspend fun setMockMode(enabled: Boolean) {
-        dataStore.edit { prefs ->
-            prefs[KEY_MOCK_MODE] = enabled
         }
     }
 
