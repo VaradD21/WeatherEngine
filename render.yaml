@@ -10,12 +10,32 @@ services:
         value: 8080
       - key: JWT_SECRET
         generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: http://localhost:8080,http://10.0.2.2:8080
       - key: SPRING_CACHE_TYPE
         value: redis
-      - key: DATABASE_URL
+      - key: SQL_INIT_MODE
+        value: always
+      - key: DATABASE_HOST
         fromDatabase:
           name: weatherengine-db
-          property: connectionString
+          property: host
+      - key: DATABASE_PORT
+        fromDatabase:
+          name: weatherengine-db
+          property: port
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: weatherengine-db
+          property: database
+      - key: DATABASE_USERNAME
+        fromDatabase:
+          name: weatherengine-db
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: weatherengine-db
+          property: password
       - key: REDIS_HOST
         fromService:
           type: redis

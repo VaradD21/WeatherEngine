@@ -1,29 +1,53 @@
-# Gradle & Build Outputs
+# Gradle, Kotlin & Android Build Outputs
 *.iml
+**/*.iml
 .gradle/
+**/.gradle/
 .kotlin/
+**/.kotlin/
 /build/
 app/build/
+**/build/
+!**/src/**/build/
 out/
+**/out/
 *.apk
 *.aab
 *.ap_
 *.dex
+*.class
+output-metadata.json
+*.hprof
 
 # Local Configuration & Secrets
 /local.properties
 local.properties
+**/local.properties
 .env
 *.env
+.env.*
+!.env.example
 *.jks
 *.keystore
+*.pem
+*.key
+*.p12
 google-services.json
+firebase-service-account.json
 
-# Android Studio / IntelliJ / VS Code
+# Android Studio / IntelliJ / VS Code / AI Tooling
 /.idea/
 .idea/
+**/.idea/
+*.ipr
+*.iws
 .vscode/
+**/.vscode/
+.claude/
+.cursor/
+.gemini/
 /captures/
+captures/
 .externalNativeBuild/
 .cxx/
 .navigation/
@@ -31,4 +55,9 @@ google-services.json
 # OS & Logs
 .DS_Store
 Thumbs.db
+Desktop.ini
 *.log
+*.tmp
+*.bak
+*.swp
+
