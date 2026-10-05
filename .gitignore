@@ -1,24 +1,56 @@
 # Environment & Secrets
 .env
 *.env
+.env.*
 !.env.example
 firebase-service-account.json
+*.jks
+*.keystore
+*.pem
+*.key
+*.p12
 
-# Gradle & Build Outputs
+# Gradle, Kotlin & JVM Build Outputs
 build/
+**/build/
+!**/src/**/build/
 .gradle/
+**/.gradle/
 .kotlin/
+**/.kotlin/
 out/
+**/out/
 *.class
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
+*.war
+*.hprof
 
-# IDE & Editors
+# IDE, Editors & AI Tooling
 .idea/
+**/.idea/
 *.iml
+**/*.iml
+*.ipr
+*.iws
 .vscode/
+**/.vscode/
+.claude/
+.cursor/
+.gemini/
+local.properties
 
-# OS & Logs
+# OS, Databases & Logs
 .DS_Store
 Thumbs.db
+Desktop.ini
+*.db
+*.sqlite
+*.sqlite3
 *.log
+hs_err_pid*
+replay_pid*
+*.tmp
+*.bak
+*.swp
+
