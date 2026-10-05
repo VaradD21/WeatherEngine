@@ -9,37 +9,65 @@ google-services.json
 *.keystore
 *.pem
 *.key
+*.p12
 
-# Gradle & Build Outputs
+# Gradle, Kotlin & JVM Build Outputs
 .gradle/
+**/.gradle/
+build/
 **/build/
 !**/src/**/build/
 out/
+**/out/
 .kotlin/
+**/.kotlin/
 *.class
+*.jar
+!**/gradle/wrapper/gradle-wrapper.jar
+*.war
 *.ap_
 *.dex
 *.apk
 *.aab
+output-metadata.json
+*.hprof
 
-# Android Studio / IntelliJ / VS Code
+# Android Studio / IntelliJ / VS Code / AI Tooling
 .idea/
+**/.idea/
 *.iml
+**/*.iml
+*.ipr
+*.iws
 .vscode/
+**/.vscode/
+.claude/
+.cursor/
+.gemini/
 local.properties
+**/local.properties
 captures/
+**/captures/
 .externalNativeBuild/
+**/.externalNativeBuild/
 .cxx/
+**/.cxx/
 .navigation/
+**/.navigation/
 
-# Local Databases & Logs
+# Local Databases, Caches & Logs
 *.db
 *.sqlite
 *.sqlite3
 *.log
 hs_err_pid*
 replay_pid*
+*.tmp
+*.bak
+*.swp
 
 # OS Files
 .DS_Store
 Thumbs.db
+Desktop.ini
+
