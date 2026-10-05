@@ -46,7 +46,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.weatherengine.app.ui.components.MockBanner
 
 @Composable
 fun AuthScreen(
@@ -64,13 +63,7 @@ fun AuthScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            if (state.isMockMode) {
-                MockBanner()
-            }
-        }
-    ) { innerPadding ->
+    Scaffold { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -98,7 +91,6 @@ fun AuthScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Login / Sign Up Mode Tabs
             TabRow(
                 selectedTabIndex = if (state.isSignUp) 1 else 0,
                 modifier = Modifier.fillMaxWidth()
@@ -117,7 +109,6 @@ fun AuthScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Email input
             OutlinedTextField(
                 value = state.email,
                 onValueChange = { viewModel.onEmailChanged(it) },
@@ -139,7 +130,6 @@ fun AuthScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Password input
             OutlinedTextField(
                 value = state.password,
                 onValueChange = { viewModel.onPasswordChanged(it) },
@@ -179,19 +169,8 @@ fun AuthScreen(
                 )
             }
 
-            if (state.showMockModeOption) {
-                Spacer(modifier = Modifier.height(12.dp))
-                OutlinedButton(
-                    onClick = { viewModel.enableMockMode() },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Try Mock mode")
-                }
-            }
-
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Submit Button (Log In / Sign Up)
             Button(
                 onClick = {
                     focusManager.clearFocus()
@@ -215,7 +194,6 @@ fun AuthScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Mode Toggle link
             TextButton(
                 onClick = { viewModel.toggleAuthMode() },
                 modifier = Modifier.height(40.dp)
@@ -244,7 +222,6 @@ fun AuthScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Skip for now Button
             OutlinedButton(
                 onClick = {
                     focusManager.clearFocus()

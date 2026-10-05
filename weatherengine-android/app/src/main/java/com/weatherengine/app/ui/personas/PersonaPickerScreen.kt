@@ -33,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.weatherengine.app.ui.components.MockBanner
 
 @Composable
 fun PersonaPickerScreen(
@@ -49,11 +48,6 @@ fun PersonaPickerScreen(
     }
 
     Scaffold(
-        topBar = {
-            if (state.isMockMode) {
-                MockBanner()
-            }
-        },
         bottomBar = {
             Column(
                 modifier = Modifier

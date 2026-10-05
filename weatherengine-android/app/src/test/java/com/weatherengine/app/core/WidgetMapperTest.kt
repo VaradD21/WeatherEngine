@@ -1,7 +1,5 @@
 package com.weatherengine.app.core
 
-import com.weatherengine.app.core.models.WidgetUi
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
@@ -50,10 +48,10 @@ class WidgetMapperTest {
         assertTrue((heat as WidgetUi.HeatAlert).alertActive)
 
         // 7. traffic_card
-        val trafJson = buildJsonObject { put("status", "mocked"); put("message", "Road clear") }
+        val trafJson = buildJsonObject { put("status", "active"); put("message", "Road clear") }
         val traf = WidgetMapper.mapWidget("traffic_card", trafJson)
-        assertTrue(traf is WidgetUi.StatusOnly)
-        assertEquals("mocked", (traf as WidgetUi.StatusOnly).status)
+        assertTrue(traf is WidgetUi.Traffic)
+        assertEquals("active", (traf as WidgetUi.Traffic).status)
 
         // 8. visibility_card
         val visJson = buildJsonObject { put("visibilityMeters", 5000); put("category", "Moderate") }
@@ -88,15 +86,15 @@ class WidgetMapperTest {
     }
 
     @Test
-    fun testDataStatusMocked_MapsToStatusOnly() {
-        val mockedData = buildJsonObject {
-            put("status", "mocked")
-            put("message", "Demo data only")
+    fun testDataStatusUnavailable_MapsToStatusOnly() {
+        val unavailableData = buildJsonObject {
+            put("status", "unavailable")
+            put("message", "Air quality data unavailable")
         }
-        val result = WidgetMapper.mapWidget("custom_card", mockedData)
+        val result = WidgetMapper.mapWidget("aqi_card", unavailableData)
         assertTrue(result is WidgetUi.StatusOnly)
-        assertEquals("mocked", (result as WidgetUi.StatusOnly).status)
-        assertEquals("Demo data only", result.message)
+        assertEquals("unavailable", (result as WidgetUi.StatusOnly).status)
+        assertEquals("Air quality data unavailable", result.message)
     }
 
     @Test

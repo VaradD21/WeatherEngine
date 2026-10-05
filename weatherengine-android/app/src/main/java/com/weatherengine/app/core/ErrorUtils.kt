@@ -4,6 +4,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
 object ErrorUtils {
@@ -108,11 +109,5 @@ object ErrorUtils {
         502, 503, 504 -> "Server unavailable"
         else -> "Error ($status)"
     }
-
-    private val kotlinx.serialization.json.JsonPrimitive.contentOrNull: String?
-        get() = try {
-            content
-        } catch (_: Exception) {
-            null
-        }
 }
+

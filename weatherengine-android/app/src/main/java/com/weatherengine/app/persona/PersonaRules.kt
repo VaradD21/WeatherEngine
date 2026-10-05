@@ -1,5 +1,6 @@
 package com.weatherengine.app.persona
 
+import com.weatherengine.app.core.Formatters
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -44,9 +45,9 @@ object PersonaRules {
     fun visibilityCategory(metres: Double?): String {
         if (metres == null || metres < PersonaConstants.MIN_VISIBILITY_M) return "Unavailable"
         return when {
-            metres < PersonaConstants.VISIBILITY_VERY_POOR_MAX + 1 -> "Very poor"
-            metres < PersonaConstants.VISIBILITY_POOR_MAX + 1 -> "Poor"
-            metres < PersonaConstants.VISIBILITY_MODERATE_MAX + 1 -> "Moderate"
+            metres <= PersonaConstants.VISIBILITY_VERY_POOR_MAX -> "Very poor"
+            metres <= PersonaConstants.VISIBILITY_POOR_MAX -> "Poor"
+            metres <= PersonaConstants.VISIBILITY_MODERATE_MAX -> "Moderate"
             else -> "Good"
         }
     }
@@ -126,16 +127,11 @@ object PersonaRules {
         }
     }
 
-    fun bestRunningWindow(hours: List<HourlyRowUi>): BestRunningResult {
-        return RunningRules.bestRunningWindow(hours)
-    }
-
     fun heatStatus(next24hApparentMax: Double?): HeatStatus {
         if (next24hApparentMax == null) return HeatStatus.None
         return when {
             next24hApparentMax >= PersonaConstants.HEAT_ALERT_MIN -> {
                 HeatStatus.Alert(
-                    active = true,
                     message = "Heat Alert: Feels like ${next24hApparentMax.roundToInt()}°C",
                     note = PersonaConstants.HEAT_DISCLAIMER_NOTE
                 )
@@ -150,15 +146,14 @@ object PersonaRules {
         }
     }
 
-    fun stormFogStatus(hours: List<HourlyRowUi>, @Suppress("UNUSED_PARAMETER") nowIso: String? = null): StormFogStatus {
+    fun stormFogStatus(hours: List<HourlyRowUi>): StormFogStatus {
         val next12 = hours.take(PersonaConstants.STORM_LOOKAHEAD_HOURS)
         val stormHour = next12.firstOrNull { it.weatherCode in listOf(95, 96, 99) }
 
         if (stormHour != null) {
-            val formatted = formatHourCompact(stormHour.timeIso)
+            val formatted = Formatters.formatHourCompact(stormHour.timeIso)
             return StormFogStatus(
                 alertActive = true,
-                stormHour = formatted,
                 message = "Thunderstorm expected around $formatted"
             )
         }
@@ -169,10 +164,9 @@ object PersonaRules {
         }
 
         if (fogHour != null) {
-            val formatted = formatHourCompact(fogHour.timeIso)
+            val formatted = Formatters.formatHourCompact(fogHour.timeIso)
             return StormFogStatus(
                 alertActive = true,
-                fogHour = formatted,
                 message = "Low visibility / Fog around $formatted"
             )
         }
@@ -183,21 +177,17 @@ object PersonaRules {
     fun commuteRain(hours: List<HourlyRowUi>): CommuteRainResult {
         val next6 = hours.take(PersonaConstants.COMMUTE_LOOKAHEAD_HOURS)
         if (next6.isEmpty()) {
-            return CommuteRainResult(0, "—", "Dry commute expected", null)
+            return CommuteRainResult(0, "—", "Dry commute expected")
         }
 
         var peakChance = 0
         var peakHourIso = next6.first().timeIso
-        var minVisibility: Double? = null
 
         for (hour in next6) {
             val prob = hour.precipProb ?: 0
             if (prob >= peakChance) {
                 peakChance = prob
                 peakHourIso = hour.timeIso
-            }
-            hour.visibilityM?.let { vis ->
-                minVisibility = if (minVisibility == null) vis else minOf(minVisibility!!, vis)
             }
         }
 
@@ -207,8 +197,8 @@ object PersonaRules {
             else -> "Dry commute expected"
         }
 
-        val peakLabel = formatHourCompact(peakHourIso)
-        return CommuteRainResult(peakChance, peakLabel, advice, minVisibility)
+        val peakLabel = Formatters.formatHourCompact(peakHourIso)
+        return CommuteRainResult(peakChance, peakLabel, advice)
     }
 
     fun mergedWidgets(selectedCodes: Set<String>): List<PersonaWidgetType> {
@@ -249,22 +239,5 @@ object PersonaRules {
         }
         return result
     }
-
-    private fun formatHourCompact(iso: String): String {
-        return try {
-            val time = LocalDateTime.parse(iso)
-            time.format(DateTimeFormatter.ofPattern("h a", Locale.US))
-        } catch (_: Exception) {
-            iso
-        }
-    }
-
-    private fun plusOneHour(iso: String): String {
-        return try {
-            val time = LocalDateTime.parse(iso)
-            time.plusHours(1).toString()
-        } catch (_: Exception) {
-            iso
-        }
-    }
 }
+

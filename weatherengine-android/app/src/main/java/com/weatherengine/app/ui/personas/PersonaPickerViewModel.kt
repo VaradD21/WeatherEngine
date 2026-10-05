@@ -27,8 +27,7 @@ data class PersonaPickerUiState(
     val selectedCodes: Set<String> = emptySet(),
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
-    val errorMessage: String? = null,
-    val isMockMode: Boolean = false
+    val errorMessage: String? = null
 )
 
 class PersonaPickerViewModel(
@@ -62,11 +61,6 @@ class PersonaPickerViewModel(
     val navigateHome: SharedFlow<Unit> = _navigateHome.asSharedFlow()
 
     init {
-        viewModelScope.launch {
-            settingsStore.isMockModeFlow.collect { mock ->
-                _uiState.update { it.copy(isMockMode = mock) }
-            }
-        }
         loadCurrentPersonas()
     }
 
@@ -75,9 +69,8 @@ class PersonaPickerViewModel(
         viewModelScope.launch(ioDispatcher) {
             var saved = settingsStore.selectedPersonasFlow.first()
             val token = settingsStore.tokenFlow.first()
-            val mock = settingsStore.isMockModeFlow.first()
 
-            if (repository != null && (mock || !token.isNullOrBlank())) {
+            if (repository != null && !token.isNullOrBlank()) {
                 when (val remoteResult = repository.getPersonas()) {
                     is NetworkResult.Success -> {
                         val remoteCodes = remoteResult.data.map { it.code }.toSet()
@@ -125,9 +118,8 @@ class PersonaPickerViewModel(
         viewModelScope.launch(ioDispatcher) {
             try {
                 val token = settingsStore.tokenFlow.first()
-                val mock = settingsStore.isMockModeFlow.first()
 
-                if (repository != null && (mock || !token.isNullOrBlank())) {
+                if (repository != null && !token.isNullOrBlank()) {
                     when (val result = repository.setPersonas(currentSelected.toList())) {
                         is NetworkResult.Success -> {
                             val confirmed = result.data.map { it.code }.toSet()

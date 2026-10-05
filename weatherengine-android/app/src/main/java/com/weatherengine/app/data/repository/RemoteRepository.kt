@@ -22,6 +22,14 @@ import retrofit2.Response
 import java.io.IOException
 import java.net.SocketTimeoutException
 
+interface WeatherEngineRepository {
+    suspend fun signup(email: String, password: String): NetworkResult<AuthResponse>
+    suspend fun login(email: String, password: String): NetworkResult<AuthResponse>
+    suspend fun getPersonas(): NetworkResult<List<PersonaDto>>
+    suspend fun setPersonas(codes: List<String>): NetworkResult<List<PersonaDto>>
+    suspend fun getHomepage(lat: Double, lon: Double): NetworkResult<HomepageResponse>
+}
+
 class RemoteRepository(
     private val apiServiceProvider: () -> ApiService,
     private val settingsStore: SettingsStore,

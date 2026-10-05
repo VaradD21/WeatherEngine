@@ -163,13 +163,9 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(fakeForecastRepo, fakeEngineRepo, settingsStore, null, testDispatcher)
         advanceUntilIdle()
 
-        if (HomeViewModel.USE_BACKEND_WIDGETS) {
-            assertTrue(viewModel.uiState.value is HomeUiState.Content)
-            val content = viewModel.uiState.value as HomeUiState.Content
-            assertEquals(1, content.widgets.size)
-        } else {
-            assertTrue(viewModel.uiState.value is HomeUiState.Guest)
-        }
+        assertTrue(viewModel.uiState.value is HomeUiState.Content)
+        val content = viewModel.uiState.value as HomeUiState.Content
+        assertEquals(1, content.widgets.size)
     }
 
     @Test
@@ -211,30 +207,5 @@ class HomeViewModelTest {
         assertTrue(viewModel.activePersonaWidgets.value.contains(com.weatherengine.app.persona.PersonaWidgetType.AQI))
         assertTrue(viewModel.activePersonaWidgets.value.contains(com.weatherengine.app.persona.PersonaWidgetType.POLLEN))
         assertEquals(1, forecastFetchCount) // No extra network call!
-    }
-
-    @Test
-    fun testNoLoginNoBackend_ProducesForecastAndPersonaCards() = runTest(testDispatcher) {
-        fakeForecastRepo.shouldSucceed = true
-        val fakeEngineRepo = object : WeatherEngineRepository {
-            override suspend fun signup(email: String, password: String) = error("unused")
-            override suspend fun login(email: String, password: String) = error("unused")
-            override suspend fun getPersonas() = error("unused")
-            override suspend fun setPersonas(codes: List<String>) = error("unused")
-            override suspend fun getHomepage(lat: Double, lon: Double) = error("unused")
-        }
-
-        // Unauthenticated, no backend running
-        val viewModel = HomeViewModel(fakeForecastRepo, fakeEngineRepo, settingsStore, null, testDispatcher)
-        advanceUntilIdle()
-
-        // Forecast is loaded successfully
-        assertTrue(viewModel.forecastState.value is ForecastUiState.Success)
-        val forecast = (viewModel.forecastState.value as ForecastUiState.Success).forecast
-        assertEquals("31°", forecast.current.temperatureFormatted)
-
-        // Persona cards are computed on-device
-        assertTrue(viewModel.activePersonaWidgets.value.isNotEmpty())
-        assertEquals(12, viewModel.activePersonaWidgets.value.size)
     }
 }

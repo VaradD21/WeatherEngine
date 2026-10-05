@@ -14,7 +14,7 @@
         android:name=".WeatherEngineApp"
         android:allowBackup="false"
         android:icon="@android:drawable/ic_dialog_map"
-        android:label="WeatherEngine"
+        android:label="@string/app_name"
         android:roundIcon="@android:drawable/ic_dialog_map"
         android:supportsRtl="true"
         android:theme="@style/Theme.WeatherEngine">
