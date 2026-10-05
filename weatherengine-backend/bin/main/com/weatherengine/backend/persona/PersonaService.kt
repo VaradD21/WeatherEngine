@@ -1,43 +1,11 @@
 package com.weatherengine.backend.persona
 
-import com.weatherengine.backend.auth.AuthenticatedUser
 import com.weatherengine.backend.common.ApiException
 import com.weatherengine.backend.user.UserRepository
-import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
-import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
-
-@RestController
-@RequestMapping("/api/users/me/personas")
-class PersonaController(
-    private val personaService: PersonaService
-) {
-
-    @GetMapping
-    fun getPersonas(
-        @AuthenticationPrincipal principal: AuthenticatedUser
-    ): ResponseEntity<List<PersonaDto>> {
-        return ResponseEntity.ok(personaService.getUserPersonas(principal.userId))
-    }
-
-    @PostMapping
-    fun setPersonas(
-        @AuthenticationPrincipal principal: AuthenticatedUser,
-        @Valid @RequestBody request: SetPersonasRequest
-    ): ResponseEntity<List<PersonaDto>> {
-        val updated = personaService.setUserPersonas(principal.userId, request.personaCodes)
-        return ResponseEntity.ok(updated)
-    }
-}
 
 @Service
 class PersonaService(
@@ -50,7 +18,12 @@ class PersonaService(
     @Transactional(readOnly = true)
     fun getUserPersonas(userId: UUID): List<PersonaDto> {
         return userPersonaRepository.findByUserId(userId)
-            .map { it.persona.toDto() }
+            .map { userPersona ->
+                PersonaDto(
+                    code = userPersona.persona.code,
+                    displayName = userPersona.persona.displayName
+                )
+            }
     }
 
     @Transactional
@@ -76,23 +49,24 @@ class PersonaService(
         userPersonaRepository.deleteByUserId(userId)
         userPersonaRepository.flush()
 
-        val orderedPersonas = distinctCodes.map { foundByCode.getValue(it) }
-        val newMappings = orderedPersonas.map { persona ->
+        val orderedPersonas = distinctCodes.mapNotNull { foundByCode[it] }
+        val newMappings = orderedPersonas.mapNotNull { persona ->
+            val pId = persona.id ?: return@mapNotNull null
             UserPersona(
-                id = UserPersonaId(userId = userId, personaId = persona.id!!),
+                id = UserPersonaId(userId = userId, personaId = pId),
                 user = user,
                 persona = persona
             )
         }
         userPersonaRepository.saveAll(newMappings)
 
-        return orderedPersonas.map { it.toDto() }
+        return orderedPersonas.map { PersonaDto(code = it.code, displayName = it.displayName) }
     }
 
     @Transactional(readOnly = true)
     fun getUserWidgetCodes(userId: UUID): List<String> {
         val personaIds = userPersonaRepository.findByUserId(userId)
-            .map { it.persona.id!! }
+            .mapNotNull { it.persona.id }
         if (personaIds.isEmpty()) {
             return emptyList()
         }
@@ -100,6 +74,4 @@ class PersonaService(
             .map { it.widgetCode }
             .distinct()
     }
-
-    private fun Persona.toDto(): PersonaDto = PersonaDto(code = code, displayName = displayName)
 }

@@ -1,40 +1,12 @@
 package com.weatherengine.backend.auth
 
 import jakarta.validation.Valid
-import jakarta.validation.constraints.Email
-import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-
-data class SignupRequest(
-    @field:NotBlank(message = "Email is required")
-    @field:Email(message = "Invalid email address format")
-    val email: String,
-
-    @field:NotBlank(message = "Password is required")
-    @field:Size(min = 8, max = 128, message = "Password must be at least 8 characters")
-    val password: String
-)
-
-data class LoginRequest(
-    @field:NotBlank(message = "Email is required")
-    @field:Email(message = "Invalid email address format")
-    val email: String,
-
-    @field:NotBlank(message = "Password is required")
-    @field:Size(min = 8, max = 128, message = "Password must be at least 8 characters")
-    val password: String
-)
-
-data class AuthResponse(
-    val email: String,
-    val token: String
-)
 
 @RestController
 @RequestMapping("/api/auth")

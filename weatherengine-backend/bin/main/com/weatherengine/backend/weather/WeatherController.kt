@@ -3,34 +3,14 @@ package com.weatherengine.backend.weather
 import com.weatherengine.backend.auth.AuthenticatedUser
 import com.weatherengine.backend.common.ApiException
 import com.weatherengine.backend.persona.PersonaService
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.stereotype.Service
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-
-@Service
-class WeatherCacheService(
-    private val openMeteoClient: OpenMeteoClient
-) {
-    @Cacheable(
-        value = ["weather-bundle"],
-        key = "T(java.lang.String).format(T(java.util.Locale).US, '%.2f,%.2f', #lat, #lon)"
-    )
-    fun getCachedWeatherBundle(lat: Double, lon: Double): WeatherBundleDto {
-        val forecast = openMeteoClient.fetchForecast(lat, lon)
-        val airQuality = openMeteoClient.fetchAirQuality(lat, lon)
-        return WeatherBundleDto(
-            forecast = forecast,
-            airQuality = airQuality,
-            fetchedAtMs = System.currentTimeMillis()
-        )
-    }
-}
+import java.util.Locale
 
 @RestController
 @RequestMapping("/api")
@@ -46,7 +26,9 @@ class WeatherController(
         @RequestParam("lon") lon: Double
     ): ResponseEntity<WeatherBundleDto> {
         validateCoordinates(lat, lon)
-        val bundle = weatherCacheService.getCachedWeatherBundle(lat, lon)
+        val latKey = String.format(Locale.US, "%.2f", lat)
+        val lonKey = String.format(Locale.US, "%.2f", lon)
+        val bundle = weatherCacheService.getCachedWeatherBundle(latKey, lonKey, lat, lon)
         return ResponseEntity.ok(bundle)
     }
 
@@ -68,7 +50,9 @@ class WeatherController(
             )
         }
 
-        val bundle = weatherCacheService.getCachedWeatherBundle(lat, lon)
+        val latKey = String.format(Locale.US, "%.2f", lat)
+        val lonKey = String.format(Locale.US, "%.2f", lon)
+        val bundle = weatherCacheService.getCachedWeatherBundle(latKey, lonKey, lat, lon)
 
         val widgets = widgetCodes.map { code ->
             widgetBuilder.buildWidget(code, bundle)

@@ -11,16 +11,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 
-class ApiException(
-    val status: HttpStatus,
-    override val message: String
-) : RuntimeException(message)
-
-data class ErrorResponse(
-    val error: String,
-    val message: String
-)
-
 @RestControllerAdvice
 class GlobalExceptionHandler {
 

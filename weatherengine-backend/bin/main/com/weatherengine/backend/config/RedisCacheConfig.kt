@@ -3,7 +3,6 @@ package com.weatherengine.backend.config
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.cache.Cache
 import org.springframework.cache.annotation.CachingConfigurer
@@ -14,27 +13,12 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer
 import org.springframework.data.redis.serializer.RedisSerializationContext
 import org.springframework.data.redis.serializer.StringRedisSerializer
-import org.springframework.http.client.SimpleClientHttpRequestFactory
-import org.springframework.web.client.RestClient
 import java.time.Duration
 
 @Configuration
-class RedisCacheConfig(
-    @Value("\${spring.cache.redis.time-to-live:900000}") private val ttlMs: Long = 900_000L
-) : CachingConfigurer {
+class RedisCacheConfig : CachingConfigurer {
 
     private val logger = LoggerFactory.getLogger(RedisCacheConfig::class.java)
-
-    @Bean
-    fun restClient(): RestClient {
-        val factory = SimpleClientHttpRequestFactory().apply {
-            setConnectTimeout(Duration.ofSeconds(10))
-            setReadTimeout(Duration.ofSeconds(15))
-        }
-        return RestClient.builder()
-            .requestFactory(factory)
-            .build()
-    }
 
     @Bean
     @ConditionalOnProperty(name = ["spring.cache.type"], havingValue = "redis", matchIfMissing = true)
@@ -47,7 +31,7 @@ class RedisCacheConfig(
         val serializer = GenericJackson2JsonRedisSerializer(mapper)
 
         return RedisCacheConfiguration.defaultCacheConfig()
-            .entryTtl(Duration.ofMillis(ttlMs))
+            .entryTtl(Duration.ofMinutes(15))
             .disableCachingNullValues()
             .serializeKeysWith(
                 RedisSerializationContext.SerializationPair.fromSerializer(StringRedisSerializer())

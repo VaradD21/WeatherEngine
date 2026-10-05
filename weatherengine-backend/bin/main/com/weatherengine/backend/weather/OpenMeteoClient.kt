@@ -27,6 +27,7 @@ class OpenMeteoClient(
             "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,uv_index_max,sunrise,sunset"
         private const val AQI_CURRENT_PARAMS =
             "us_aqi,pm2_5,grass_pollen,birch_pollen,alder_pollen,ragweed_pollen"
+        private const val AQI_HOURLY_PARAMS = "us_aqi,pm2_5"
     }
 
     fun fetchForecast(lat: Double, lon: Double): OpenMeteoForecastResponse {
@@ -41,17 +42,18 @@ class OpenMeteoClient(
             .build()
             .toUri()
 
-        val response = try {
+        return try {
             restClient.get()
                 .uri(uri)
                 .retrieve()
                 .body(OpenMeteoForecastResponse::class.java)
+                ?: throw ApiException(HttpStatus.BAD_GATEWAY, "Empty response from upstream weather provider")
+        } catch (ex: ApiException) {
+            throw ex
         } catch (ex: Exception) {
             logger.error("Failed to fetch forecast from Open-Meteo for ({}, {})", lat, lon, ex)
             throw ApiException(HttpStatus.BAD_GATEWAY, "Upstream weather provider is temporarily unavailable")
         }
-
-        return response ?: throw ApiException(HttpStatus.BAD_GATEWAY, "Empty response from upstream weather provider")
     }
 
     fun fetchAirQuality(lat: Double, lon: Double): OpenMeteoAirQualityResponse? {
@@ -59,6 +61,7 @@ class OpenMeteoClient(
             .queryParam("latitude", lat)
             .queryParam("longitude", lon)
             .queryParam("current", AQI_CURRENT_PARAMS)
+            .queryParam("hourly", AQI_HOURLY_PARAMS)
             .queryParam("timezone", "auto")
             .queryParam("forecast_days", 2)
             .build()
