@@ -3,7 +3,7 @@ spring:
     name: weatherengine-backend
 
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:weatherengine}}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/weatherengine}
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:postgres}
 
@@ -28,7 +28,7 @@ spring:
 
   sql:
     init:
-      mode: ${SQL_INIT_MODE:always}
+      mode: always
       schema-locations: classpath:schema.sql
       data-locations: classpath:data.sql
 
@@ -50,13 +50,19 @@ app:
     secret: ${JWT_SECRET:weatherengine-dev-secret-key-must-be-at-least-32-bytes-long}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24h
 
-  cors:
-    allowed-origins: ${ALLOWED_ORIGINS:}
-
   weather-providers:
     open-meteo:
       forecast-url: ${OPEN_METEO_FORECAST_URL:https://api.open-meteo.com/v1/forecast}
       air-quality-url: ${OPEN_METEO_AIR_QUALITY_URL:https://air-quality-api.open-meteo.com/v1/air-quality}
+    openweathermap:
+      api-key: ${OPENWEATHERMAP_API_KEY:}
+    waqi:
+      api-key: ${WAQI_API_KEY:}
+    openuv:
+      api-key: ${OPENUV_API_KEY:}
+
+  fcm:
+    credentials-path: ${FCM_CREDENTIALS_PATH:}
 
 logging:
   level:

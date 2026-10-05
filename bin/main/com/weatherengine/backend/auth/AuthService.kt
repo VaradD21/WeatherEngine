@@ -23,7 +23,7 @@ class AuthService(
 
     @Transactional
     fun signup(request: SignupRequest): AuthResponse {
-        val normalizedEmail = normalizeEmail(request.email)
+        val normalizedEmail = request.email.trim().lowercase()
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw ApiException(HttpStatus.CONFLICT, "Email is already registered")
         }
@@ -34,25 +34,31 @@ class AuthService(
                 passwordHash = passwordEncoder.encode(request.password)
             )
         )
-        val userId = savedUser.id!!
+
+        val userId = savedUser.id
+            ?: throw ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to persist user")
 
         // Assign default persona ("health_conscious") on signup so homepage has immediate widgets
         personaRepository.findByCode("health_conscious")?.let { defaultPersona ->
-            userPersonaRepository.save(
-                UserPersona(
-                    id = UserPersonaId(userId = userId, personaId = defaultPersona.id!!),
-                    user = savedUser,
-                    persona = defaultPersona
+            val personaId = defaultPersona.id
+            if (personaId != null) {
+                userPersonaRepository.save(
+                    UserPersona(
+                        id = UserPersonaId(userId = userId, personaId = personaId),
+                        user = savedUser,
+                        persona = defaultPersona
+                    )
                 )
-            )
+            }
         }
 
-        return issueAuthResponse(savedUser)
+        val token = jwtService.generateToken(userId = userId, email = savedUser.email)
+        return AuthResponse(email = savedUser.email, token = token)
     }
 
     @Transactional(readOnly = true)
     fun login(request: LoginRequest): AuthResponse {
-        val normalizedEmail = normalizeEmail(request.email)
+        val normalizedEmail = request.email.trim().lowercase()
         val user = userRepository.findByEmail(normalizedEmail)
             ?: throw ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password")
 
@@ -60,13 +66,10 @@ class AuthService(
             throw ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password")
         }
 
-        return issueAuthResponse(user)
-    }
+        val userId = user.id
+            ?: throw ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid user record")
 
-    private fun normalizeEmail(email: String): String = email.trim().lowercase()
-
-    private fun issueAuthResponse(user: User): AuthResponse {
-        val token = jwtService.generateToken(userId = user.id!!, email = user.email)
+        val token = jwtService.generateToken(userId = userId, email = user.email)
         return AuthResponse(email = user.email, token = token)
     }
 }

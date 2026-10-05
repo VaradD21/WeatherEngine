@@ -58,17 +58,28 @@ data class OpenMeteoDailyForecast(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class OpenMeteoAirQualityResponse(
-    val current: OpenMeteoCurrentAirQuality? = null
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val current: OpenMeteoCurrentAirQuality? = null,
+    val hourly: OpenMeteoHourlyAirQuality? = null
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class OpenMeteoCurrentAirQuality(
+    val time: String? = null,
     @JsonProperty("us_aqi") val usAqi: Int? = null,
     @JsonProperty("pm2_5") val pm25: Double? = null,
     @JsonProperty("grass_pollen") val grassPollen: Double? = null,
     @JsonProperty("birch_pollen") val birchPollen: Double? = null,
     @JsonProperty("alder_pollen") val alderPollen: Double? = null,
     @JsonProperty("ragweed_pollen") val ragweedPollen: Double? = null
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class OpenMeteoHourlyAirQuality(
+    val time: List<String> = emptyList(),
+    @JsonProperty("us_aqi") val usAqi: List<Int?> = emptyList(),
+    @JsonProperty("pm2_5") val pm25: List<Double?> = emptyList()
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)

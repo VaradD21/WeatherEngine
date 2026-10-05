@@ -1,7 +1,7 @@
 package com.weatherengine.backend.user
 
 import jakarta.persistence.*
-import org.springframework.data.jpa.repository.JpaRepository
+import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -15,10 +15,8 @@ class User(
     var email: String,
 
     @Column(name = "password_hash", nullable = false)
-    var passwordHash: String
-)
+    var passwordHash: String,
 
-interface UserRepository : JpaRepository<User, UUID> {
-    fun findByEmail(email: String): User?
-    fun existsByEmail(email: String): Boolean
-}
+    @Column(name = "created_at")
+    var createdAt: Instant = Instant.now()
+)
