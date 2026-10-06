@@ -47,15 +47,11 @@ sealed class Screen(val route: String) {
 }
 
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             WeatherEngineTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
+                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     WeatherEngineAppNav(app = this@MainActivity)
                 }
             }
@@ -63,113 +59,57 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private inline fun <VM : ViewModel> vmFactory(crossinline create: () -> VM) =
+    object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = create() as T
+    }
+
 @Composable
 fun WeatherEngineAppNav(app: ComponentActivity) {
-    val appContainer = (app.application as WeatherEngineApp).appContainer
+    val container = (app.application as WeatherEngineApp).appContainer
     val navController = rememberNavController()
-    val startDestination = Screen.Auth.route
 
     LaunchedEffect(Unit) {
-        appContainer.remoteRepository.sessionExpiredEvents.collect {
+        container.remoteRepository.sessionExpiredEvents.collect {
             Toast.makeText(app, "Session expired, please log in again", Toast.LENGTH_LONG).show()
-            navController.navigate(Screen.Auth.route) {
-                popUpTo(0) { inclusive = true }
-            }
+            navController.navigate(Screen.Auth.route) { popUpTo(0) { inclusive = true } }
         }
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = startDestination
-    ) {
+    NavHost(navController = navController, startDestination = Screen.Auth.route) {
         composable(Screen.Auth.route) {
-            val authVm: AuthViewModel = viewModel(
-                factory = object : ViewModelProvider.Factory {
-                    @Suppress("UNCHECKED_CAST")
-                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                        return AuthViewModel(
-                            repository = appContainer.repository,
-                            settingsStore = appContainer.settingsStore
-                        ) as T
-                    }
-                }
-            )
-            val navigateToHome = {
-                navController.navigate(Screen.Home.route) {
-                    popUpTo(Screen.Auth.route) { inclusive = true }
-                }
-            }
-            AuthScreen(
-                viewModel = authVm,
-                onAuthSuccess = navigateToHome,
-                onSkip = navigateToHome
-            )
+            val vm: AuthViewModel = viewModel(factory = vmFactory { AuthViewModel(container.repository, container.settingsStore) })
+            val goHome = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Auth.route) { inclusive = true } } }
+            AuthScreen(viewModel = vm, onAuthSuccess = goHome, onSkip = goHome)
         }
-
         composable(Screen.Home.route) {
-            val homeVm: HomeViewModel = viewModel(
-                factory = object : ViewModelProvider.Factory {
-                    @Suppress("UNCHECKED_CAST")
-                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                        return HomeViewModel(
-                            forecastRepository = appContainer.forecastRepository,
-                            repository = appContainer.repository,
-                            settingsStore = appContainer.settingsStore,
-                            locationProvider = AndroidLocationProvider(app)
-                        ) as T
-                    }
-                }
-            )
+            val vm: HomeViewModel = viewModel(factory = vmFactory {
+                HomeViewModel(container.forecastRepository, container.repository, container.settingsStore, AndroidLocationProvider(app))
+            })
             HomeScreen(
-                viewModel = homeVm,
+                viewModel = vm,
                 onNavigateSettings = { navController.navigate(Screen.Settings.route) },
                 onNavigatePersonas = { navController.navigate(Screen.PersonaPicker.route) },
                 onNavigateAuth = { navController.navigate(Screen.Auth.route) }
             )
         }
-
         composable(Screen.PersonaPicker.route) {
-            val pickerVm: PersonaPickerViewModel = viewModel(
-                factory = object : ViewModelProvider.Factory {
-                    @Suppress("UNCHECKED_CAST")
-                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                        return PersonaPickerViewModel(
-                            settingsStore = appContainer.settingsStore,
-                            repository = appContainer.repository
-                        ) as T
-                    }
-                }
-            )
+            val vm: PersonaPickerViewModel = viewModel(factory = vmFactory {
+                PersonaPickerViewModel(container.settingsStore, repository = container.repository)
+            })
             PersonaPickerScreen(
-                viewModel = pickerVm,
-                onSaved = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.PersonaPicker.route) { inclusive = true }
-                    }
-                }
+                viewModel = vm,
+                onSaved = { navController.navigate(Screen.Home.route) { popUpTo(Screen.PersonaPicker.route) { inclusive = true } } }
             )
         }
-
         composable(Screen.Settings.route) {
-            val settingsVm: SettingsViewModel = viewModel(
-                factory = object : ViewModelProvider.Factory {
-                    @Suppress("UNCHECKED_CAST")
-                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                        return SettingsViewModel(
-                            settingsStore = appContainer.settingsStore
-                        ) as T
-                    }
-                }
-            )
+            val vm: SettingsViewModel = viewModel(factory = vmFactory { SettingsViewModel(container.settingsStore) })
             SettingsScreen(
-                viewModel = settingsVm,
+                viewModel = vm,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigatePersonas = { navController.navigate(Screen.PersonaPicker.route) },
-                onLogout = {
-                    navController.navigate(Screen.Auth.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
+                onLogout = { navController.navigate(Screen.Auth.route) { popUpTo(0) { inclusive = true } } }
             )
         }
     }
