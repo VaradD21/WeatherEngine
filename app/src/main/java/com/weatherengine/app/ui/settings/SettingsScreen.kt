@@ -1,42 +1,106 @@
 package com.weatherengine.app.ui.settings
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.weatherengine.app.core.UrlUtils
+import com.weatherengine.app.core.Validators
+import com.weatherengine.app.data.local.SettingsStore
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+
+data class SettingsUiState(
+    val isEmulatorPreset: Boolean = true,
+    val customUrl: String = "",
+    val customUrlError: String? = null,
+    val manualLat: String = SettingsStore.DEFAULT_LAT.toString(),
+    val manualLon: String = SettingsStore.DEFAULT_LON.toString(),
+    val latLonError: String? = null,
+    val feedbackMessage: String? = null
+)
+
+class SettingsViewModel(private val settingsStore: SettingsStore) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(SettingsUiState())
+    val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
+
+    private val _navigateAuth = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val navigateAuth: SharedFlow<Unit> = _navigateAuth.asSharedFlow()
+
+    init {
+        viewModelScope.launch {
+            settingsStore.baseUrlFlow.collect { url ->
+                val isEmulator = url == SettingsStore.DEFAULT_BASE_URL
+                _uiState.update { it.copy(isEmulatorPreset = isEmulator, customUrl = if (!isEmulator) url else it.customUrl) }
+            }
+        }
+        viewModelScope.launch {
+            settingsStore.manualLatFlow.collect { lat -> _uiState.update { it.copy(manualLat = lat.toString()) } }
+        }
+        viewModelScope.launch {
+            settingsStore.manualLonFlow.collect { lon -> _uiState.update { it.copy(manualLon = lon.toString()) } }
+        }
+    }
+
+    fun selectServerPreset(isEmulator: Boolean) {
+        viewModelScope.launch {
+            if (isEmulator) {
+                settingsStore.setBaseUrl(SettingsStore.DEFAULT_BASE_URL)
+                _uiState.update { it.copy(isEmulatorPreset = true, customUrlError = null) }
+            } else {
+                _uiState.update { it.copy(isEmulatorPreset = false) }
+            }
+        }
+    }
+
+    fun onCustomUrlChanged(url: String) = _uiState.update { it.copy(customUrl = url, customUrlError = null) }
+
+    fun saveCustomUrl() {
+        val normalized = UrlUtils.normalizeBaseUrl(_uiState.value.customUrl)
+        if (normalized == null) {
+            _uiState.update { it.copy(customUrlError = "Enter a valid http:// or https:// URL") }
+            return
+        }
+        viewModelScope.launch {
+            settingsStore.setBaseUrl(normalized)
+            _uiState.update { it.copy(customUrl = normalized, customUrlError = null, feedbackMessage = "Server URL updated") }
+        }
+    }
+
+    fun onManualLatChanged(lat: String) = _uiState.update { it.copy(manualLat = lat, latLonError = null) }
+    fun onManualLonChanged(lon: String) = _uiState.update { it.copy(manualLon = lon, latLonError = null) }
+
+    fun saveManualCoordinates() {
+        val lat = _uiState.value.manualLat.trim()
+        val lon = _uiState.value.manualLon.trim()
+        if (!Validators.isValidLatLon(lat, lon)) {
+            _uiState.update { it.copy(latLonError = "Latitude must be between -90 and 90, longitude between -180 and 180") }
+            return
+        }
+        viewModelScope.launch {
+            settingsStore.setManualLocation(lat.toDouble(), lon.toDouble())
+            _uiState.update { it.copy(latLonError = null, feedbackMessage = "Coordinates saved") }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            settingsStore.clearAll()
+            _navigateAuth.tryEmit(Unit)
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,9 +113,7 @@ fun SettingsScreen(
     val state by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.navigateAuth.collect {
-            onLogout()
-        }
+        viewModel.navigateAuth.collect { onLogout() }
     }
 
     Scaffold(
@@ -74,67 +136,41 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(Modifier.height(4.dp))
 
             state.feedbackMessage?.let {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
             }
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(Modifier.padding(16.dp)) {
                     Text("Backend Server Target", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(Modifier.height(8.dp))
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { viewModel.selectServerPreset(true) },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = state.isEmulatorPreset,
-                            onClick = { viewModel.selectServerPreset(true) }
-                        )
+                    Row(Modifier.fillMaxWidth().clickable { viewModel.selectServerPreset(true) }, verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = state.isEmulatorPreset, onClick = { viewModel.selectServerPreset(true) })
                         Text("Android Emulator host (10.0.2.2:8080)", modifier = Modifier.padding(start = 8.dp))
                     }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { viewModel.selectServerPreset(false) },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = !state.isEmulatorPreset,
-                            onClick = { viewModel.selectServerPreset(false) }
-                        )
+                    Row(Modifier.fillMaxWidth().clickable { viewModel.selectServerPreset(false) }, verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = !state.isEmulatorPreset, onClick = { viewModel.selectServerPreset(false) })
                         Text("Custom Server URL", modifier = Modifier.padding(start = 8.dp))
                     }
 
                     if (!state.isEmulatorPreset) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(Modifier.height(8.dp))
                         OutlinedTextField(
                             value = state.customUrl,
-                            onValueChange = { viewModel.onCustomUrlChanged(it) },
+                            onValueChange = viewModel::onCustomUrlChanged,
                             label = { Text("Server URL (http:// or https://)") },
                             modifier = Modifier.fillMaxWidth(),
                             isError = state.customUrlError != null,
-                            supportingText = {
-                                state.customUrlError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                            }
+                            supportingText = { state.customUrlError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.saveCustomUrl() }) {
-                            Text("Apply URL")
-                        }
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = viewModel::saveCustomUrl) { Text("Apply URL") }
                     }
                 }
             }
@@ -143,66 +179,40 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(Modifier.padding(16.dp)) {
                     Text("Manual Location Coordinates", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        "Fallback when GPS is disabled or unavailable.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(Modifier.height(4.dp))
+                    Text("Fallback when GPS is disabled or unavailable.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(12.dp))
 
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        OutlinedTextField(
-                            value = state.manualLat,
-                            onValueChange = { viewModel.onManualLatChanged(it) },
-                            label = { Text("Latitude") },
-                            modifier = Modifier.weight(1f)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        OutlinedTextField(
-                            value = state.manualLon,
-                            onValueChange = { viewModel.onManualLonChanged(it) },
-                            label = { Text("Longitude") },
-                            modifier = Modifier.weight(1f)
-                        )
+                    Row(Modifier.fillMaxWidth()) {
+                        OutlinedTextField(value = state.manualLat, onValueChange = viewModel::onManualLatChanged, label = { Text("Latitude") }, modifier = Modifier.weight(1f))
+                        Spacer(Modifier.width(8.dp))
+                        OutlinedTextField(value = state.manualLon, onValueChange = viewModel::onManualLonChanged, label = { Text("Longitude") }, modifier = Modifier.weight(1f))
                     }
-
                     state.latLonError?.let {
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(Modifier.height(4.dp))
                         Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = { viewModel.saveManualCoordinates() }) {
-                        Text("Save Coordinates")
-                    }
+                    Spacer(Modifier.height(8.dp))
+                    Button(onClick = viewModel::saveManualCoordinates) { Text("Save Coordinates") }
                 }
             }
 
-            OutlinedButton(
-                onClick = onNavigatePersonas,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-            ) {
+            OutlinedButton(onClick = onNavigatePersonas, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                 Text("Change Personas")
             }
 
             HorizontalDivider()
 
             Button(
-                onClick = { viewModel.logout() },
+                onClick = viewModel::logout,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
+                modifier = Modifier.fillMaxWidth().height(48.dp)
             ) {
                 Text("Log Out")
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
