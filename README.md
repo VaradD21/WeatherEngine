@@ -20,24 +20,18 @@ Production-ready Spring Boot 3 (Kotlin) backend for **WeatherEngine**, providing
 src/main/kotlin/com/weatherengine/backend/
 ├── BackendApplication.kt          # Spring Boot entry point
 ├── auth/
-│   ├── AuthController.kt          # POST /api/auth/signup, POST /api/auth/login + Auth DTOs
-│   ├── AuthService.kt             # User registration, BCrypt verification, default persona assignment
-│   └── JwtService.kt              # JWT signing/verification + JwtAuthenticationFilter
+│   └── AuthService.kt             # Auth DTOs, JwtService, JwtAuthenticationFilter, AuthService & /api/auth/* controller
 ├── common/
 │   └── GlobalExceptionHandler.kt  # @RestControllerAdvice + ApiException
 ├── config/
-│   ├── RedisCacheConfig.kt        # Redis cache manager (15-min TTL) + RestClient bean
-│   └── SecurityConfig.kt          # Stateless Spring Security filter chain + CORS + 401 EntryPoint
+│   └── SecurityConfig.kt          # Stateless Spring Security filter chain + RedisCacheConfig + RestClient bean
 ├── persona/
-│   ├── Persona.kt                 # Persona, PersonaWidget, UserPersona entities, DTOs & repositories
-│   └── PersonaService.kt          # Persona CRUD service + GET/POST /api/users/me/personas controller
+│   └── PersonaService.kt          # Persona entities, repositories, service, and /api/users/me/personas controller
 ├── user/
 │   └── User.kt                    # User JPA entity + UserRepository
 └── weather/
-    ├── OpenMeteoClient.kt         # Upstream Open-Meteo Forecast & Air Quality HTTP client
-    ├── OpenMeteoModels.kt         # Upstream response DTOs + WeatherBundleDto & WidgetDto
-    ├── WeatherController.kt       # GET /api/weather, GET /api/homepage + WeatherCacheService
-    └── WidgetBuilder.kt           # Computes persona-specific widget payloads from WeatherBundleDto
+    ├── OpenMeteoClient.kt         # Upstream Open-Meteo HTTP client + forecast/AQ/widget DTOs
+    └── WeatherController.kt       # GET /api/weather, GET /api/homepage, WeatherCacheService & WidgetBuilder
 ```
 
 ---

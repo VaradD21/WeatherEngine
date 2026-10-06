@@ -9,58 +9,17 @@ INSERT INTO personas (code, display_name) VALUES
     ('event_planner', 'Event Planner')
 ON CONFLICT (code) DO NOTHING;
 
--- Health-conscious
 INSERT INTO persona_widgets (persona_id, widget_code, display_order)
-SELECT id, w.code, w.ord FROM personas,
-    (VALUES ('aqi_card', 1), ('pollen_card', 2), ('uv_index_card', 3), ('humidity_card', 4)) AS w(code, ord)
-WHERE personas.code = 'health_conscious'
-ON CONFLICT DO NOTHING;
-
--- Outdoor fitness
-INSERT INTO persona_widgets (persona_id, widget_code, display_order)
-SELECT id, w.code, w.ord FROM personas,
-    (VALUES ('sunrise_sunset_card', 1), ('best_running_hours_card', 2), ('wind_speed_card', 3), ('heat_alert_card', 4)) AS w(code, ord)
-WHERE personas.code = 'outdoor_fitness'
-ON CONFLICT DO NOTHING;
-
--- Commuter
-INSERT INTO persona_widgets (persona_id, widget_code, display_order)
-SELECT id, w.code, w.ord FROM personas,
-    (VALUES ('traffic_card', 1), ('visibility_card', 2), ('storm_fog_alert_card', 3)) AS w(code, ord)
-WHERE personas.code = 'commuter'
-ON CONFLICT DO NOTHING;
-
--- Beachgoer / surfer
-INSERT INTO persona_widgets (persona_id, widget_code, display_order)
-SELECT id, w.code, w.ord FROM personas,
-    (VALUES ('tide_card', 1), ('wave_height_card', 2), ('sea_temp_card', 3)) AS w(code, ord)
-WHERE personas.code = 'beachgoer'
-ON CONFLICT DO NOTHING;
-
--- Traveler
-INSERT INTO persona_widgets (persona_id, widget_code, display_order)
-SELECT id, w.code, w.ord FROM personas,
-    (VALUES ('saved_destinations_card', 1), ('flight_alert_card', 2), ('packing_suggestion_card', 3)) AS w(code, ord)
-WHERE personas.code = 'traveler'
-ON CONFLICT DO NOTHING;
-
--- Parent / family
-INSERT INTO persona_widgets (persona_id, widget_code, display_order)
-SELECT id, w.code, w.ord FROM personas,
-    (VALUES ('school_commute_card', 1), ('rain_alert_card', 2), ('severe_weather_card', 3)) AS w(code, ord)
-WHERE personas.code = 'parent'
-ON CONFLICT DO NOTHING;
-
--- Agriculture / gardener
-INSERT INTO persona_widgets (persona_id, widget_code, display_order)
-SELECT id, w.code, w.ord FROM personas,
-    (VALUES ('soil_moisture_card', 1), ('rainfall_prediction_card', 2), ('frost_alert_card', 3), ('planting_guidance_card', 4)) AS w(code, ord)
-WHERE personas.code = 'gardener'
-ON CONFLICT DO NOTHING;
-
--- Event planner
-INSERT INTO persona_widgets (persona_id, widget_code, display_order)
-SELECT id, w.code, w.ord FROM personas,
-    (VALUES ('extended_forecast_card', 1), ('rain_probability_card', 2), ('comfort_index_card', 3)) AS w(code, ord)
-WHERE personas.code = 'event_planner'
+SELECT p.id, w.widget_code, w.ord
+FROM personas p
+JOIN (VALUES
+    ('health_conscious', 'aqi_card', 1), ('health_conscious', 'pollen_card', 2), ('health_conscious', 'uv_index_card', 3), ('health_conscious', 'humidity_card', 4),
+    ('outdoor_fitness', 'sunrise_sunset_card', 1), ('outdoor_fitness', 'best_running_hours_card', 2), ('outdoor_fitness', 'wind_speed_card', 3), ('outdoor_fitness', 'heat_alert_card', 4),
+    ('commuter', 'traffic_card', 1), ('commuter', 'visibility_card', 2), ('commuter', 'storm_fog_alert_card', 3),
+    ('beachgoer', 'tide_card', 1), ('beachgoer', 'wave_height_card', 2), ('beachgoer', 'sea_temp_card', 3),
+    ('traveler', 'saved_destinations_card', 1), ('traveler', 'flight_alert_card', 2), ('traveler', 'packing_suggestion_card', 3),
+    ('parent', 'school_commute_card', 1), ('parent', 'rain_alert_card', 2), ('parent', 'severe_weather_card', 3),
+    ('gardener', 'soil_moisture_card', 1), ('gardener', 'rainfall_prediction_card', 2), ('gardener', 'frost_alert_card', 3), ('gardener', 'planting_guidance_card', 4),
+    ('event_planner', 'extended_forecast_card', 1), ('event_planner', 'rain_probability_card', 2), ('event_planner', 'comfort_index_card', 3)
+) AS w(persona_code, widget_code, ord) ON p.code = w.persona_code
 ON CONFLICT DO NOTHING;
