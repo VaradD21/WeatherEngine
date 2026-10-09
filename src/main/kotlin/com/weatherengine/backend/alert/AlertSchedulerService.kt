@@ -39,7 +39,7 @@ class AlertSchedulerService(
             val lonKey = String.format(Locale.US, "%.2f", lon)
 
             val bundle = try {
-                weatherCacheService.getCachedWeatherBundle(latKey, lonKey, lat, lon)
+                weatherCacheService.getCachedWeatherBundle(lat, lon)
             } catch (ex: Exception) {
                 logger.warn("Skipping alert check for location {}: {}", locationId, ex.message)
                 continue

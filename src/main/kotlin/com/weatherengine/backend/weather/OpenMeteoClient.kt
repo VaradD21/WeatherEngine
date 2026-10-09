@@ -41,6 +41,7 @@ data class OpenMeteoHourlyForecast(
     @JsonProperty("apparent_temperature") val apparentTemperature: List<Double?> = emptyList(),
     @JsonProperty("relative_humidity_2m") val relativeHumidity2m: List<Int?> = emptyList(),
     @JsonProperty("precipitation_probability") val precipitationProbability: List<Int?> = emptyList(),
+    val precipitation: List<Double?> = emptyList(),
     @JsonProperty("weather_code") val weatherCode: List<Int?> = emptyList(),
     @JsonProperty("wind_speed_10m") val windSpeed10m: List<Double?> = emptyList(),
     @JsonProperty("wind_gusts_10m") val windGusts10m: List<Double?> = emptyList(),
@@ -109,7 +110,7 @@ class OpenMeteoClient(
         private const val CURRENT_PARAMS =
             "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_gusts_10m"
         private const val HOURLY_PARAMS =
-            "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m,visibility,uv_index,is_day"
+            "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,visibility,uv_index,is_day"
         private const val DAILY_PARAMS =
             "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,uv_index_max,sunrise,sunset"
         private const val AQI_CURRENT_PARAMS =

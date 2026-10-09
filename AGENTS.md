@@ -10,3 +10,4 @@
 - Alerts are push-based via FCM from a scheduled backend job (`@Scheduled`), not polled by the client. Dedup sent alerts using `alert_log` before sending.
 - Write JUnit5 + MockK tests for new service-layer methods. Integration tests use Testcontainers Postgres, not an in-memory DB substitute.
 - Never commit real API keys or secrets — use `.env` (gitignored), reference `.env.example` for required vars.
+- Adding a persona: Register persona & widget codes in `data.sql` and `WidgetBuilder` registry; define thresholds in `<Persona>PersonaConstants.kt` and pure logic in `<Persona>PersonaRules.kt`; map payloads to UI cards via Android `WidgetMapper.kt` and register in Android `PersonaConstants.kt`.

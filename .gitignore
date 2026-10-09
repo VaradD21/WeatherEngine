@@ -25,6 +25,10 @@ out/
 !gradle/wrapper/gradle-wrapper.jar
 *.war
 *.hprof
+reports/
+**/reports/
+test-results/
+**/test-results/
 
 # IDE, Editors & AI Tooling
 .idea/
@@ -44,7 +48,10 @@ local.properties
 .DS_Store
 Thumbs.db
 Desktop.ini
+nul
 *.db
+*.mv.db
+*.trace.db
 *.sqlite
 *.sqlite3
 *.log
@@ -53,4 +60,3 @@ replay_pid*
 *.tmp
 *.bak
 *.swp
-

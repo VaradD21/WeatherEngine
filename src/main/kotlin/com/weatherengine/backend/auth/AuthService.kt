@@ -82,13 +82,15 @@ class JwtService(
             .compact()
     }
 
-    fun parseToken(token: String): AuthenticatedUser? = try {
-        val claims = Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).payload
-        val subject = claims.subject ?: return null
-        val email = claims["email"] as? String ?: return null
-        AuthenticatedUser(userId = UUID.fromString(subject), email = email)
-    } catch (_: Exception) {
-        null
+    fun parseToken(token: String): AuthenticatedUser? {
+        return try {
+            val claims = Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).payload
+            val subject = claims.subject ?: return null
+            val email = claims["email"] as? String ?: return null
+            AuthenticatedUser(userId = UUID.fromString(subject), email = email)
+        } catch (_: Exception) {
+            null
+        }
     }
 }
 
