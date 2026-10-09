@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.time.LocalDateTime
+import java.time.ZoneId
 import kotlin.math.roundToInt
 
 @Service
@@ -20,8 +22,8 @@ class WeatherCacheService(
     private val openMeteoClient: OpenMeteoClient
 ) {
     @Cacheable(
-        value = ["weather-bundle"],
-        key = "T(java.lang.String).format(T(java.util.Locale).US, '%.2f,%.2f', #lat, #lon)"
+        value = ["weather-bundle-v2"],
+        key = "'v2:' + T(java.lang.String).format(T(java.util.Locale).US, '%.2f,%.2f', #lat, #lon)"
     )
     fun getCachedWeatherBundle(lat: Double, lon: Double): WeatherBundleDto {
         val forecast = openMeteoClient.fetchForecast(lat, lon)
@@ -37,7 +39,12 @@ class WeatherCacheService(
 @Component
 class WidgetBuilder {
 
-    fun buildWidget(widgetCode: String, bundle: WeatherBundleDto): WidgetDto {
+    fun buildWidget(
+        widgetCode: String,
+        bundle: WeatherBundleDto,
+        schoolStart: String = "08:00",
+        schoolEnd: String = "15:00"
+    ): WidgetDto {
         val current = bundle.forecast.current
         val hourly = bundle.forecast.hourly
         val daily = bundle.forecast.daily
@@ -136,6 +143,27 @@ class WidgetBuilder {
                 val temp = current?.temperature2m?.roundToInt() ?: 24
                 mapOf("status" to "unavailable", "message" to "Optimal outdoor workout conditions (~${temp}°C)")
             }
+            "school_commute_card" -> {
+                val (start, end) = try {
+                    ParentPersonaRules.parseAndValidateSchoolHours(schoolStart, schoolEnd)
+                } catch (ex: IllegalArgumentException) {
+                    Pair(java.time.LocalTime.of(8, 0), java.time.LocalTime.of(15, 0))
+                }
+                val timezone = bundle.forecast.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
+                val nowLocal = LocalDateTime.now(timezone)
+                val runWindow = ParentPersonaRules.nextSchoolRun(nowLocal, start, end)
+                ParentPersonaRules.computeSchoolCommuteCard(hourly, runWindow)
+            }
+            "rain_alert_card" -> {
+                val timezone = bundle.forecast.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
+                val nowLocal = LocalDateTime.now(timezone)
+                ParentPersonaRules.computeRainAlertCard(hourly, nowLocal)
+            }
+            "severe_weather_card" -> {
+                val timezone = bundle.forecast.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
+                val nowLocal = LocalDateTime.now(timezone)
+                ParentPersonaRules.computeSevereWeatherCard(hourly, nowLocal)
+            }
             else -> mapOf("status" to "unavailable", "message" to "Widget $widgetCode is ready")
         }
 
@@ -181,9 +209,16 @@ class WeatherController(
     fun getHomepage(
         @AuthenticationPrincipal principal: AuthenticatedUser,
         @RequestParam("lat") lat: Double,
-        @RequestParam("lon") lon: Double
+        @RequestParam("lon") lon: Double,
+        @RequestParam(name = "schoolStart", defaultValue = "08:00") schoolStart: String,
+        @RequestParam(name = "schoolEnd", defaultValue = "15:00") schoolEnd: String
     ): ResponseEntity<HomepageResponse> {
         validateCoordinates(lat, lon)
+        try {
+            ParentPersonaRules.parseAndValidateSchoolHours(schoolStart, schoolEnd)
+        } catch (ex: IllegalArgumentException) {
+            throw ApiException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid school hours")
+        }
 
         val widgetCodes = personaService.getUserWidgetCodes(principal.userId)
         if (widgetCodes.isEmpty()) {
@@ -193,7 +228,7 @@ class WeatherController(
         }
 
         val bundle = weatherCacheService.getCachedWeatherBundle(lat, lon)
-        val widgets = widgetCodes.map { code -> widgetBuilder.buildWidget(code, bundle) }
+        val widgets = widgetCodes.map { code -> widgetBuilder.buildWidget(code, bundle, schoolStart, schoolEnd) }
         return ResponseEntity.ok(HomepageResponse(widgets = widgets))
     }
 

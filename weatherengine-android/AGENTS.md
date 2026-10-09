@@ -11,3 +11,7 @@
   - Never log tokens, passwords, authorization headers, or request/response bodies containing user credentials.
   - Cleartext HTTP traffic is only permitted in debug builds for local emulator testing via `network_security_config.xml`. Release builds strictly require HTTPS.
 - **File Limits**: Keep files modular and concise (< 300 lines).
+- **Adding a persona**:
+  1. Registry entry: Define persona code and widget codes in backend `data.sql` and `WidgetBuilder` registry.
+  2. Mapper case: Map widget payloads into sealed `WidgetUi` models in Android `WidgetMapper.kt`.
+  3. Constants: Store thresholds in backend `ParentPersonaConstants.kt` and UI metadata in Android `PersonaConstants.kt`.

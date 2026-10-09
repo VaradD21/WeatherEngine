@@ -114,6 +114,10 @@ enum class PersonaWidgetType {
 // App heuristics, not official warnings
 object PersonaConstants {
 
+    const val PERSONA_PARENT_CODE = "parent"
+    const val PERSONA_PARENT_NAME = "Parent & Family"
+    const val PERSONA_PARENT_DESC = "School commute alerts, rain lookahead, and severe weather warnings for families."
+
     // Sane value ranges for raw provider data sanitization
     const val MIN_TEMP_C = -100.0
     const val MAX_TEMP_C = 70.0

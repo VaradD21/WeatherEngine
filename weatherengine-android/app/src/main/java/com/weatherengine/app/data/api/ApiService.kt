@@ -76,7 +76,9 @@ interface ApiService {
     @GET("api/homepage")
     suspend fun getHomepage(
         @Query("lat") lat: Double,
-        @Query("lon") lon: Double
+        @Query("lon") lon: Double,
+        @Query("schoolStart") schoolStart: String? = null,
+        @Query("schoolEnd") schoolEnd: String? = null
     ): Response<HomepageResponse>
 
     @GET("api/weather")

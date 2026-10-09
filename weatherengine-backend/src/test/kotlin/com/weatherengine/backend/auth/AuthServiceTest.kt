@@ -62,6 +62,7 @@ class AuthServiceTest {
             code = "health_conscious",
             displayName = "Health-conscious"
         )
+        every { userPersonaRepository.save(any()) } answers { firstArg() }
 
         val response = authService.signup(SignupRequest("User@Example.com", "password123"))
 

@@ -25,3 +25,28 @@ CREATE TABLE IF NOT EXISTS persona_widgets (
     display_order INT NOT NULL,
     UNIQUE (persona_id, widget_code)
 );
+
+CREATE TABLE IF NOT EXISTS locations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    label VARCHAR(255),
+    latitude NUMERIC(9, 6) NOT NULL,
+    longitude NUMERIC(9, 6) NOT NULL,
+    is_primary BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS alert_subscriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    location_id UUID REFERENCES locations(id) ON DELETE CASCADE,
+    fcm_token VARCHAR(255) NOT NULL,
+    active BOOLEAN DEFAULT true
+);
+
+CREATE TABLE IF NOT EXISTS alert_log (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    location_id UUID REFERENCES locations(id) ON DELETE CASCADE,
+    alert_type VARCHAR(50) NOT NULL,
+    sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

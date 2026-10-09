@@ -21,6 +21,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
@@ -87,6 +90,13 @@ class HomeViewModel(
                 _activePersonaWidgets.value = PersonaRules.mergedWidgets(personas)
             }
         }
+        viewModelScope.launch {
+            combine(settingsStore.schoolStartFlow, settingsStore.schoolEndFlow) { start, end ->
+                Pair(start, end)
+            }.distinctUntilChanged().drop(1).collect {
+                loadData()
+            }
+        }
         loadData()
     }
 
@@ -127,6 +137,9 @@ class HomeViewModel(
                 _locationLabel.value = resolvedLabel
 
                 val token = settingsStore.tokenFlow.first()
+                val schoolStart = settingsStore.schoolStartFlow.first()
+                val schoolEnd = settingsStore.schoolEndFlow.first()
+                val isParentSelected = _selectedPersonas.value.contains("parent")
 
                 val forecastDeferred = async {
                     forecastRepository.getForecast(
@@ -139,7 +152,7 @@ class HomeViewModel(
 
                 val widgetsDeferred = async {
                     if (!token.isNullOrBlank()) {
-                        repository.getHomepage(lat, lon)
+                        repository.getHomepage(lat, lon, schoolStart, schoolEnd)
                     } else {
                         null
                     }
@@ -160,7 +173,11 @@ class HomeViewModel(
                         is NetworkResult.Success -> {
                             val response = widgetResult.data
                             if (response.widgets.isEmpty()) {
-                                _uiState.value = HomeUiState.Empty
+                                if (isParentSelected) {
+                                    _uiState.value = HomeUiState.Content(widgets = parentOfflineWidgets())
+                                } else {
+                                    _uiState.value = HomeUiState.Empty
+                                }
                             } else {
                                 val mapped = response.widgets.map { dto ->
                                     WidgetMapper.mapWidget(dto.type, dto.data)
@@ -185,19 +202,35 @@ class HomeViewModel(
                                     }
                                     _uiState.value = HomeUiState.Content(widgets = mapped)
                                 } catch (_: Exception) {
-                                    _uiState.value = HomeUiState.Error(widgetResult.message)
+                                    if (isParentSelected) {
+                                        _uiState.value = HomeUiState.Content(widgets = parentOfflineWidgets())
+                                    } else {
+                                        _uiState.value = HomeUiState.Error(widgetResult.message)
+                                    }
                                 }
+                            } else if (isParentSelected) {
+                                _uiState.value = HomeUiState.Content(widgets = parentOfflineWidgets())
                             } else {
                                 _uiState.value = HomeUiState.Error(widgetResult.message)
                             }
                         }
                     }
                 } else {
-                    _uiState.value = HomeUiState.Guest
+                    if (isParentSelected) {
+                        _uiState.value = HomeUiState.Content(widgets = parentOfflineWidgets())
+                    } else {
+                        _uiState.value = HomeUiState.Guest
+                    }
                 }
             } finally {
                 _isRefreshing.value = false
             }
         }
     }
+
+    private fun parentOfflineWidgets() = listOf(
+        WidgetUi.StatusOnly("school_commute_card", "unavailable", "Available when online"),
+        WidgetUi.StatusOnly("rain_alert_card", "unavailable", "Available when online"),
+        WidgetUi.StatusOnly("severe_weather_card", "unavailable", "Available when online")
+    )
 }

@@ -31,6 +31,11 @@ out/
 *.aab
 output-metadata.json
 *.hprof
+reports/
+**/reports/
+test-results/
+**/test-results/
+lint-results*
 
 # Android Studio / IntelliJ / VS Code / AI Tooling
 .idea/
@@ -57,6 +62,8 @@ captures/
 
 # Local Databases, Caches & Logs
 *.db
+*.mv.db
+*.trace.db
 *.sqlite
 *.sqlite3
 *.log
@@ -70,4 +77,4 @@ replay_pid*
 .DS_Store
 Thumbs.db
 Desktop.ini
-
+nul
