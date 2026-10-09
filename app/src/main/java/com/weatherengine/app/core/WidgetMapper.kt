@@ -6,6 +6,7 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 
 sealed class WidgetUi(open val type: String) {
@@ -61,6 +62,35 @@ sealed class WidgetUi(open val type: String) {
         override val type: String = "storm_fog_alert_card",
         val alertActive: Boolean,
         val conditionCode: Int,
+        val message: String
+    ) : WidgetUi(type)
+
+    data class SchoolCommute(
+        override val type: String = "school_commute_card",
+        val run: String,
+        val date: String,
+        val window: String,
+        val verdict: String,
+        val reasons: List<String>,
+        val tips: List<String>
+    ) : WidgetUi(type)
+
+    data class RainAlert(
+        override val type: String = "rain_alert_card",
+        val message: String,
+        val peakProbabilityPercent: Int,
+        val peakHourLabel: String?
+    ) : WidgetUi(type)
+
+    data class SevereAlertItem(
+        val type: String,
+        val startsAt: String,
+        val message: String
+    )
+
+    data class SevereWeather(
+        override val type: String = "severe_weather_card",
+        val alerts: List<SevereAlertItem>,
         val message: String
     ) : WidgetUi(type)
 
@@ -136,6 +166,50 @@ object WidgetMapper {
                     val code = dataElement["conditionCode"]?.jsonPrimitive?.intOrNull ?: error("Missing conditionCode")
                     val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: error("Missing message")
                     WidgetUi.StormFog(type = type, alertActive = active, conditionCode = code, message = msg)
+                }
+                "school_commute_card" -> {
+                    val run = dataElement["run"]?.jsonPrimitive?.contentOrNull ?: error("Missing run")
+                    val date = dataElement["date"]?.jsonPrimitive?.contentOrNull ?: error("Missing date")
+                    val window = dataElement["window"]?.jsonPrimitive?.contentOrNull ?: error("Missing window")
+                    val verdict = dataElement["verdict"]?.jsonPrimitive?.contentOrNull ?: error("Missing verdict")
+                    val reasons = dataElement["reasons"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+                    val tips = dataElement["tips"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+                    WidgetUi.SchoolCommute(
+                        type = type,
+                        run = run,
+                        date = date,
+                        window = window,
+                        verdict = verdict,
+                        reasons = reasons,
+                        tips = tips
+                    )
+                }
+                "rain_alert_card" -> {
+                    val message = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: error("Missing message")
+                    val peakProb = dataElement["peakProbabilityPercent"]?.jsonPrimitive?.intOrNull ?: error("Missing peakProbabilityPercent")
+                    val peakHourLabel = dataElement["peakHourLabel"]?.jsonPrimitive?.contentOrNull
+                    WidgetUi.RainAlert(
+                        type = type,
+                        message = message,
+                        peakProbabilityPercent = peakProb,
+                        peakHourLabel = peakHourLabel
+                    )
+                }
+                "severe_weather_card" -> {
+                    val message = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: error("Missing message")
+                    val alertsList = dataElement["alerts"]?.jsonArray?.mapNotNull { item ->
+                        if (item is JsonObject) {
+                            val aType = item["type"]?.jsonPrimitive?.contentOrNull ?: "unknown"
+                            val startsAt = item["startsAt"]?.jsonPrimitive?.contentOrNull ?: ""
+                            val msg = item["message"]?.jsonPrimitive?.contentOrNull ?: ""
+                            WidgetUi.SevereAlertItem(aType, startsAt, msg)
+                        } else null
+                    } ?: emptyList()
+                    WidgetUi.SevereWeather(
+                        type = type,
+                        alerts = alertsList,
+                        message = message
+                    )
                 }
                 else -> {
                     WidgetUi.Unsupported(type = type)

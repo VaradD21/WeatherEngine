@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.weatherengine.app.core.WidgetUi
 import com.weatherengine.app.ui.home.components.HourlyForecastStrip
 import com.weatherengine.app.ui.home.components.RenderPersonaWidget
 import com.weatherengine.app.ui.theme.AmberWarning
@@ -63,6 +64,7 @@ fun HomeScreen(
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
     val selectedPersonas by viewModel.selectedPersonas.collectAsState()
     val activePersonaWidgets by viewModel.activePersonaWidgets.collectAsState()
+    val homeUiState by viewModel.uiState.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -236,6 +238,7 @@ fun HomeScreen(
                                                 "health_conscious" -> "Health"
                                                 "outdoor_fitness" -> "Fitness"
                                                 "commuter" -> "Commuter"
+                                                "parent" -> "Parent & Family"
                                                 else -> code
                                             }
                                         }
@@ -246,11 +249,23 @@ fun HomeScreen(
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text("Edit")
                                     }
-                                }
-                            }
+                                 }
+                             }
 
                             items(activePersonaWidgets) { widgetType ->
                                 RenderPersonaWidget(widgetType = widgetType, forecast = forecast)
+                            }
+
+                            if (homeUiState is HomeUiState.Content) {
+                                items((homeUiState as HomeUiState.Content).widgets) { widget ->
+                                    when (widget) {
+                                        is WidgetUi.SchoolCommute -> SchoolCommuteCard(commute = widget)
+                                        is WidgetUi.RainAlert -> RainAlertCard(rain = widget)
+                                        is WidgetUi.SevereWeather -> SevereWeatherCard(severe = widget)
+                                        is WidgetUi.StatusOnly -> StatusOnlyCard(widget = widget)
+                                        else -> {}
+                                    }
+                                }
                             }
                         }
 

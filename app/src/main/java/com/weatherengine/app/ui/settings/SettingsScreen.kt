@@ -27,6 +27,9 @@ data class SettingsUiState(
     val manualLat: String = SettingsStore.DEFAULT_LAT.toString(),
     val manualLon: String = SettingsStore.DEFAULT_LON.toString(),
     val latLonError: String? = null,
+    val schoolStart: String = SettingsStore.DEFAULT_SCHOOL_START,
+    val schoolEnd: String = SettingsStore.DEFAULT_SCHOOL_END,
+    val schoolHoursError: String? = null,
     val feedbackMessage: String? = null
 )
 
@@ -50,6 +53,12 @@ class SettingsViewModel(private val settingsStore: SettingsStore) : ViewModel() 
         }
         viewModelScope.launch {
             settingsStore.manualLonFlow.collect { lon -> _uiState.update { it.copy(manualLon = lon.toString()) } }
+        }
+        viewModelScope.launch {
+            settingsStore.schoolStartFlow.collect { start -> _uiState.update { it.copy(schoolStart = start) } }
+        }
+        viewModelScope.launch {
+            settingsStore.schoolEndFlow.collect { end -> _uiState.update { it.copy(schoolEnd = end) } }
         }
     }
 
@@ -91,6 +100,23 @@ class SettingsViewModel(private val settingsStore: SettingsStore) : ViewModel() 
         viewModelScope.launch {
             settingsStore.setManualLocation(lat.toDouble(), lon.toDouble())
             _uiState.update { it.copy(latLonError = null, feedbackMessage = "Coordinates saved") }
+        }
+    }
+
+    fun onSchoolStartChanged(start: String) = _uiState.update { it.copy(schoolStart = start, schoolHoursError = null) }
+    fun onSchoolEndChanged(end: String) = _uiState.update { it.copy(schoolEnd = end, schoolHoursError = null) }
+
+    fun saveSchoolHours() {
+        val s = _uiState.value.schoolStart.trim()
+        val e = _uiState.value.schoolEnd.trim()
+        val error = Validators.validateSchoolHours(s, e)
+        if (error != null) {
+            _uiState.update { it.copy(schoolHoursError = error) }
+            return
+        }
+        viewModelScope.launch {
+            settingsStore.saveSchoolHours(s, e)
+            _uiState.update { it.copy(schoolHoursError = null, feedbackMessage = "School hours saved") }
         }
     }
 
@@ -196,6 +222,45 @@ fun SettingsScreen(
                     }
                     Spacer(Modifier.height(8.dp))
                     Button(onClick = viewModel::saveManualCoordinates) { Text("Save Coordinates") }
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("School Hours (Parent & Family)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Used for morning and afternoon school commute weather verdicts. Assumes Monday-Friday school days.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(12.dp))
+
+                    Row(Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = state.schoolStart,
+                            onValueChange = viewModel::onSchoolStartChanged,
+                            label = { Text("Start (HH:mm)") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        OutlinedTextField(
+                            value = state.schoolEnd,
+                            onValueChange = viewModel::onSchoolEndChanged,
+                            label = { Text("End (HH:mm)") },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    state.schoolHoursError?.let {
+                        Spacer(Modifier.height(4.dp))
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = viewModel::saveSchoolHours,
+                        modifier = Modifier.height(48.dp)
+                    ) {
+                        Text("Save School Hours")
+                    }
                 }
             }
 

@@ -18,7 +18,7 @@ import java.io.IOException
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "weather_engine_settings")
 
-class SettingsStore(private val dataStore: DataStore<Preferences>) {
+open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) {
 
     companion object {
         const val CURRENT_FORECAST_SCHEMA_VERSION = 2
@@ -42,46 +42,54 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
 
         val KEY_SELECTED_PERSONAS = stringSetPreferencesKey("selected_personas")
         val DEFAULT_PERSONAS = setOf("health_conscious", "outdoor_fitness", "commuter")
+
+        val KEY_SCHOOL_START = stringPreferencesKey("school_start")
+        val KEY_SCHOOL_END = stringPreferencesKey("school_end")
+        const val DEFAULT_SCHOOL_START = "08:00"
+        const val DEFAULT_SCHOOL_END = "15:00"
     }
 
-    private val safePreferences: Flow<Preferences> = dataStore.data
-        .catch { exception ->
+    private val safePreferences: Flow<Preferences> = dataStore?.data
+        ?.catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
             } else {
                 throw exception
             }
-        }
+        } ?: kotlinx.coroutines.flow.emptyFlow()
 
-    val tokenFlow: Flow<String?> = safePreferences.map { it[KEY_TOKEN] }
-    val baseUrlFlow: Flow<String> = safePreferences.map { it[KEY_BASE_URL] ?: DEFAULT_BASE_URL }
-    val manualLatFlow: Flow<Double> = safePreferences.map { it[KEY_MANUAL_LAT] ?: DEFAULT_LAT }
-    val manualLonFlow: Flow<Double> = safePreferences.map { it[KEY_MANUAL_LON] ?: DEFAULT_LON }
-    val cachedHomepageJsonFlow: Flow<String?> = safePreferences.map { it[KEY_CACHED_HOMEPAGE_JSON] }
-    val cachedHomepageTimeFlow: Flow<Long?> = safePreferences.map { it[KEY_CACHED_HOMEPAGE_TIME] }
-    val cachedForecastJsonFlow: Flow<String?> = safePreferences.map { it[KEY_CACHED_FORECAST_JSON] }
-    val cachedForecastLocKeyFlow: Flow<String?> = safePreferences.map { it[KEY_CACHED_FORECAST_LOC_KEY] }
-    val cachedForecastSchemaFlow: Flow<Int?> = safePreferences.map { it[KEY_CACHED_FORECAST_SCHEMA] }
+    open val tokenFlow: Flow<String?> = safePreferences.map { it[KEY_TOKEN] }
+    open val baseUrlFlow: Flow<String> = safePreferences.map { it[KEY_BASE_URL] ?: DEFAULT_BASE_URL }
+    open val manualLatFlow: Flow<Double> = safePreferences.map { it[KEY_MANUAL_LAT] ?: DEFAULT_LAT }
+    open val manualLonFlow: Flow<Double> = safePreferences.map { it[KEY_MANUAL_LON] ?: DEFAULT_LON }
+    open val cachedHomepageJsonFlow: Flow<String?> = safePreferences.map { it[KEY_CACHED_HOMEPAGE_JSON] }
+    open val cachedHomepageTimeFlow: Flow<Long?> = safePreferences.map { it[KEY_CACHED_HOMEPAGE_TIME] }
+    open val cachedForecastJsonFlow: Flow<String?> = safePreferences.map { it[KEY_CACHED_FORECAST_JSON] }
+    open val cachedForecastLocKeyFlow: Flow<String?> = safePreferences.map { it[KEY_CACHED_FORECAST_LOC_KEY] }
+    open val cachedForecastSchemaFlow: Flow<Int?> = safePreferences.map { it[KEY_CACHED_FORECAST_SCHEMA] }
 
-    val selectedPersonasFlow: Flow<Set<String>> = safePreferences.map {
+    open val schoolStartFlow: Flow<String> = safePreferences.map { it[KEY_SCHOOL_START] ?: DEFAULT_SCHOOL_START }
+    open val schoolEndFlow: Flow<String> = safePreferences.map { it[KEY_SCHOOL_END] ?: DEFAULT_SCHOOL_END }
+
+    open val selectedPersonasFlow: Flow<Set<String>> = safePreferences.map {
         it[KEY_SELECTED_PERSONAS] ?: DEFAULT_PERSONAS
     }
 
-    suspend fun saveAuth(token: String, email: String) {
-        dataStore.edit { prefs ->
+    open suspend fun saveAuth(token: String, email: String) {
+        dataStore?.edit { prefs ->
             prefs[KEY_TOKEN] = token
             prefs[KEY_EMAIL] = email
         }
     }
 
-    suspend fun clearToken() {
-        dataStore.edit { prefs ->
+    open suspend fun clearToken() {
+        dataStore?.edit { prefs ->
             prefs.remove(KEY_TOKEN)
         }
     }
 
-    suspend fun clearAll() {
-        dataStore.edit { prefs ->
+    open suspend fun clearAll() {
+        dataStore?.edit { prefs ->
             prefs.remove(KEY_TOKEN)
             prefs.remove(KEY_EMAIL)
             prefs.remove(KEY_CACHED_HOMEPAGE_JSON)
@@ -89,33 +97,33 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
         }
     }
 
-    suspend fun setBaseUrl(url: String) {
-        dataStore.edit { prefs ->
+    open suspend fun setBaseUrl(url: String) {
+        dataStore?.edit { prefs ->
             prefs[KEY_BASE_URL] = url
         }
     }
 
-    suspend fun setManualLocation(lat: Double, lon: Double) {
-        dataStore.edit { prefs ->
+    open suspend fun setManualLocation(lat: Double, lon: Double) {
+        dataStore?.edit { prefs ->
             prefs[KEY_MANUAL_LAT] = lat
             prefs[KEY_MANUAL_LON] = lon
         }
     }
 
-    suspend fun cacheHomepage(jsonString: String, timestampMs: Long) {
-        dataStore.edit { prefs ->
+    open suspend fun cacheHomepage(jsonString: String, timestampMs: Long) {
+        dataStore?.edit { prefs ->
             prefs[KEY_CACHED_HOMEPAGE_JSON] = jsonString
             prefs[KEY_CACHED_HOMEPAGE_TIME] = timestampMs
         }
     }
 
-    suspend fun cacheForecast(
+    open suspend fun cacheForecast(
         locKey: String,
         jsonString: String,
         timestampMs: Long,
         schemaVersion: Int = CURRENT_FORECAST_SCHEMA_VERSION
     ) {
-        dataStore.edit { prefs ->
+        dataStore?.edit { prefs ->
             prefs[KEY_CACHED_FORECAST_LOC_KEY] = locKey
             prefs[KEY_CACHED_FORECAST_JSON] = jsonString
             prefs[KEY_CACHED_FORECAST_TIME] = timestampMs
@@ -123,9 +131,16 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
         }
     }
 
-    suspend fun saveSelectedPersonas(codes: Set<String>) {
-        dataStore.edit { prefs ->
+    open suspend fun saveSelectedPersonas(codes: Set<String>) {
+        dataStore?.edit { prefs ->
             prefs[KEY_SELECTED_PERSONAS] = codes
+        }
+    }
+
+    open suspend fun saveSchoolHours(start: String, end: String) {
+        dataStore?.edit { prefs ->
+            prefs[KEY_SCHOOL_START] = start
+            prefs[KEY_SCHOOL_END] = end
         }
     }
 }

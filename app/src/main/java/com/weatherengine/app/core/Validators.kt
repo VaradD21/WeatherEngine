@@ -9,7 +9,7 @@ object Formatters {
     fun formatHourCompact(isoString: String): String {
         return try {
             val dt = LocalDateTime.parse(isoString)
-            dt.format(DateTimeFormatter.ofPattern("h a", Locale.getDefault()))
+            dt.format(DateTimeFormatter.ofPattern("h a", Locale.US))
         } catch (_: Exception) {
             isoString
         }
@@ -79,6 +79,23 @@ object Validators {
         val lat = latStr.toDoubleOrNull()
         val lon = lonStr.toDoubleOrNull()
         return isValidLatLon(lat, lon)
+    }
+
+    fun validateSchoolHours(startStr: String?, endStr: String?): String? {
+        val s = startStr?.trim().orEmpty()
+        val e = endStr?.trim().orEmpty()
+        val timeRegex = Regex("^([01]\\d|2[0-3]):[0-5]\\d$")
+        if (!timeRegex.matches(s) || !timeRegex.matches(e)) {
+            return "Both times must be in HH:mm 24-hour format (e.g. 08:00, 15:00)"
+        }
+        val (sH, sM) = s.split(":").map { it.toInt() }
+        val (eH, eM) = e.split(":").map { it.toInt() }
+        val startMins = sH * 60 + sM
+        val endMins = eH * 60 + eM
+        if (endMins <= startMins) {
+            return "School end time must be strictly after school start time"
+        }
+        return null
     }
 }
 

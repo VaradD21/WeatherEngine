@@ -27,7 +27,15 @@ interface WeatherEngineRepository {
     suspend fun login(email: String, password: String): NetworkResult<AuthResponse>
     suspend fun getPersonas(): NetworkResult<List<PersonaDto>>
     suspend fun setPersonas(codes: List<String>): NetworkResult<List<PersonaDto>>
-    suspend fun getHomepage(lat: Double, lon: Double): NetworkResult<HomepageResponse>
+    suspend fun getHomepage(lat: Double, lon: Double): NetworkResult<HomepageResponse> =
+        getHomepage(lat, lon, null, null)
+    suspend fun getHomepage(
+        lat: Double,
+        lon: Double,
+        schoolStart: String?,
+        schoolEnd: String?
+    ): NetworkResult<HomepageResponse> =
+        getHomepage(lat, lon)
 }
 
 class RemoteRepository(
@@ -63,9 +71,14 @@ class RemoteRepository(
         }
     }
 
-    override suspend fun getHomepage(lat: Double, lon: Double): NetworkResult<HomepageResponse> {
+    override suspend fun getHomepage(
+        lat: Double,
+        lon: Double,
+        schoolStart: String?,
+        schoolEnd: String?
+    ): NetworkResult<HomepageResponse> {
         return safeApiCall(isProtected = true) {
-            apiServiceProvider().getHomepage(lat, lon)
+            apiServiceProvider().getHomepage(lat, lon, schoolStart, schoolEnd)
         }
     }
 

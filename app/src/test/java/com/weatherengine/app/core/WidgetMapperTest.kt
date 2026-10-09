@@ -1,107 +1,159 @@
 package com.weatherengine.app.core
 
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WidgetMapperTest {
 
+    private val json = Json { ignoreUnknownKeys = true }
+
     @Test
-    fun testAllNineWidgets_ValidPayload() {
-        // 1. aqi_card
-        val aqiJson = buildJsonObject { put("aqi", 3); put("category", "Moderate") }
-        val aqi = WidgetMapper.mapWidget("aqi_card", aqiJson)
-        assertTrue(aqi is WidgetUi.Aqi)
-        assertEquals(3, (aqi as WidgetUi.Aqi).aqi)
-        assertEquals("Moderate", aqi.category)
+    fun testSchoolCommuteFullPayload() {
+        val jsonString = """
+            {
+                "status": "ok",
+                "run": "morning",
+                "date": "2026-10-12",
+                "window": "07:00 - 08:00",
+                "verdict": "prepare",
+                "reasons": ["Rain likely (60%)", "Strong gusts 35 km/h"],
+                "tips": ["Pack an umbrella or raincoat", "Secure loose items"]
+            }
+        """.trimIndent()
+        val element = json.parseToJsonElement(jsonString)
+        val result = WidgetMapper.mapWidget("school_commute_card", element)
 
-        // 2. humidity_card
-        val humJson = buildJsonObject { put("humidityPercent", 75) }
-        val hum = WidgetMapper.mapWidget("humidity_card", humJson)
-        assertTrue(hum is WidgetUi.Humidity)
-        assertEquals(75, (hum as WidgetUi.Humidity).humidityPercent)
-
-        // 3. uv_index_card
-        val uvJson = buildJsonObject { put("uvIndex", 6.5); put("status", "High"); put("message", "Wear sun protection") }
-        val uv = WidgetMapper.mapWidget("uv_index_card", uvJson)
-        assertTrue(uv is WidgetUi.Uv)
-        assertEquals(6.5, (uv as WidgetUi.Uv).uvIndex!!, 0.01)
-
-        // 4. sunrise_sunset_card
-        val sunJson = buildJsonObject { put("sunrise", "2026-09-28T06:00:00Z"); put("sunset", "2026-09-28T18:00:00Z") }
-        val sun = WidgetMapper.mapWidget("sunrise_sunset_card", sunJson)
-        assertTrue(sun is WidgetUi.SunriseSunset)
-        assertEquals("2026-09-28T06:00:00Z", (sun as WidgetUi.SunriseSunset).sunrise)
-
-        // 5. wind_speed_card
-        val windJson = buildJsonObject { put("speedMetersPerSecond", 8.2) }
-        val wind = WidgetMapper.mapWidget("wind_speed_card", windJson)
-        assertTrue(wind is WidgetUi.Wind)
-        assertEquals(8.2, (wind as WidgetUi.Wind).speedMetersPerSecond, 0.01)
-
-        // 6. heat_alert_card
-        val heatJson = buildJsonObject { put("alertActive", true); put("temperatureCelsius", 41.5); put("message", "Extreme Heat") }
-        val heat = WidgetMapper.mapWidget("heat_alert_card", heatJson)
-        assertTrue(heat is WidgetUi.HeatAlert)
-        assertTrue((heat as WidgetUi.HeatAlert).alertActive)
-
-        // 7. traffic_card
-        val trafJson = buildJsonObject { put("status", "active"); put("message", "Road clear") }
-        val traf = WidgetMapper.mapWidget("traffic_card", trafJson)
-        assertTrue(traf is WidgetUi.Traffic)
-        assertEquals("active", (traf as WidgetUi.Traffic).status)
-
-        // 8. visibility_card
-        val visJson = buildJsonObject { put("visibilityMeters", 5000); put("category", "Moderate") }
-        val vis = WidgetMapper.mapWidget("visibility_card", visJson)
-        assertTrue(vis is WidgetUi.Visibility)
-        assertEquals(5000, (vis as WidgetUi.Visibility).visibilityMeters)
-
-        // 9. storm_fog_alert_card
-        val stormJson = buildJsonObject { put("alertActive", false); put("conditionCode", 800); put("message", "Clear") }
-        val storm = WidgetMapper.mapWidget("storm_fog_alert_card", stormJson)
-        assertTrue(storm is WidgetUi.StormFog)
-        assertEquals(800, (storm as WidgetUi.StormFog).conditionCode)
+        assertTrue(result is WidgetUi.SchoolCommute)
+        val commute = result as WidgetUi.SchoolCommute
+        assertEquals("school_commute_card", commute.type)
+        assertEquals("morning", commute.run)
+        assertEquals("2026-10-12", commute.date)
+        assertEquals("07:00 - 08:00", commute.window)
+        assertEquals("prepare", commute.verdict)
+        assertEquals(listOf("Rain likely (60%)", "Strong gusts 35 km/h"), commute.reasons)
+        assertEquals(listOf("Pack an umbrella or raincoat", "Secure loose items"), commute.tips)
     }
 
     @Test
-    fun testMissingRequiredField_MapsToStatusOnly() {
-        // Missing "category" in aqi_card
-        val brokenAqi = buildJsonObject { put("aqi", 2) }
-        val result = WidgetMapper.mapWidget("aqi_card", brokenAqi)
-        assertTrue(result is WidgetUi.StatusOnly)
-        assertEquals("error", (result as WidgetUi.StatusOnly).status)
-        assertEquals("Temporarily unavailable", result.message)
+    fun testRainAlertFullPayload() {
+        val jsonString = """
+            {
+                "status": "ok",
+                "message": "Rain likely around 4 PM",
+                "peakProbabilityPercent": 75,
+                "peakHourLabel": "4 PM"
+            }
+        """.trimIndent()
+        val element = json.parseToJsonElement(jsonString)
+        val result = WidgetMapper.mapWidget("rain_alert_card", element)
+
+        assertTrue(result is WidgetUi.RainAlert)
+        val rain = result as WidgetUi.RainAlert
+        assertEquals("rain_alert_card", rain.type)
+        assertEquals("Rain likely around 4 PM", rain.message)
+        assertEquals(75, rain.peakProbabilityPercent)
+        assertEquals("4 PM", rain.peakHourLabel)
     }
 
     @Test
-    fun testWrongTypedField_MapsToStatusOnly() {
-        // "humidityPercent" is string instead of int
-        val brokenHum = buildJsonObject { put("humidityPercent", "high") }
-        val result = WidgetMapper.mapWidget("humidity_card", brokenHum)
-        assertTrue(result is WidgetUi.StatusOnly)
-        assertEquals("error", (result as WidgetUi.StatusOnly).status)
+    fun testSevereWeatherFullPayload() {
+        val jsonString = """
+            {
+                "status": "ok",
+                "alerts": [
+                    {
+                        "type": "thunderstorm",
+                        "startsAt": "14:00",
+                        "message": "Thunderstorm activity expected"
+                    },
+                    {
+                        "type": "strong_wind",
+                        "startsAt": "16:00",
+                        "message": "Gusts up to 55 km/h"
+                    }
+                ],
+                "message": "Severe weather expected in the next 24 hours"
+            }
+        """.trimIndent()
+        val element = json.parseToJsonElement(jsonString)
+        val result = WidgetMapper.mapWidget("severe_weather_card", element)
+
+        assertTrue(result is WidgetUi.SevereWeather)
+        val severe = result as WidgetUi.SevereWeather
+        assertEquals("severe_weather_card", severe.type)
+        assertEquals(2, severe.alerts.size)
+        assertEquals("thunderstorm", severe.alerts[0].type)
+        assertEquals("14:00", severe.alerts[0].startsAt)
+        assertEquals("Thunderstorm activity expected", severe.alerts[0].message)
+        assertEquals("strong_wind", severe.alerts[1].type)
+        assertEquals("Severe weather expected in the next 24 hours", severe.message)
     }
 
     @Test
-    fun testDataStatusUnavailable_MapsToStatusOnly() {
-        val unavailableData = buildJsonObject {
-            put("status", "unavailable")
-            put("message", "Air quality data unavailable")
-        }
-        val result = WidgetMapper.mapWidget("aqi_card", unavailableData)
-        assertTrue(result is WidgetUi.StatusOnly)
-        assertEquals("unavailable", (result as WidgetUi.StatusOnly).status)
-        assertEquals("Air quality data unavailable", result.message)
+    fun testMissingOptionalFields() {
+        // rain_alert_card without peakHourLabel
+        val rainJson = """{"status":"ok","message":"No rain expected","peakProbabilityPercent":5}"""
+        val rainResult = WidgetMapper.mapWidget("rain_alert_card", json.parseToJsonElement(rainJson))
+        assertTrue(rainResult is WidgetUi.RainAlert)
+        assertNull((rainResult as WidgetUi.RainAlert).peakHourLabel)
+
+        // severe_weather_card without alerts list
+        val severeJson = """{"status":"ok","message":"No severe weather expected in the next 24 hours"}"""
+        val severeResult = WidgetMapper.mapWidget("severe_weather_card", json.parseToJsonElement(severeJson))
+        assertTrue(severeResult is WidgetUi.SevereWeather)
+        val severe = severeResult as WidgetUi.SevereWeather
+        assertTrue(severe.alerts.isEmpty())
+        assertEquals("No severe weather expected in the next 24 hours", severe.message)
     }
 
     @Test
-    fun testUnknownWidgetType_MapsToUnsupported() {
-        val unknownData = buildJsonObject { put("foo", "bar") }
-        val result = WidgetMapper.mapWidget("alien_widget_card", unknownData)
-        assertTrue(result is WidgetUi.Unsupported)
-        assertEquals("alien_widget_card", (result as WidgetUi.Unsupported).type)
+    fun testMissingRequiredFieldsDegradesGracefully() {
+        // school_commute_card missing 'verdict'
+        val brokenCommuteJson = """{"status":"ok","run":"morning","date":"2026-10-12"}"""
+        val commuteResult = WidgetMapper.mapWidget("school_commute_card", json.parseToJsonElement(brokenCommuteJson))
+        assertTrue(commuteResult is WidgetUi.StatusOnly)
+        assertEquals("error", (commuteResult as WidgetUi.StatusOnly).status)
+
+        // rain_alert_card missing 'peakProbabilityPercent'
+        val brokenRainJson = """{"status":"ok","message":"Rain soon"}"""
+        val rainResult = WidgetMapper.mapWidget("rain_alert_card", json.parseToJsonElement(brokenRainJson))
+        assertTrue(rainResult is WidgetUi.StatusOnly)
+        assertEquals("error", (rainResult as WidgetUi.StatusOnly).status)
+    }
+
+    @Test
+    fun testUnavailableAndErrorStatuses() {
+        val unavailableJson = """{"status":"unavailable","message":"Available when online"}"""
+        val element = json.parseToJsonElement(unavailableJson)
+
+        val commute = WidgetMapper.mapWidget("school_commute_card", element)
+        assertTrue(commute is WidgetUi.StatusOnly)
+        assertEquals("unavailable", (commute as WidgetUi.StatusOnly).status)
+        assertEquals("Available when online", commute.message)
+
+        val errorJson = """{"status":"error","message":"Failed to compute commute"}"""
+        val rain = WidgetMapper.mapWidget("rain_alert_card", json.parseToJsonElement(errorJson))
+        assertTrue(rain is WidgetUi.StatusOnly)
+        assertEquals("error", (rain as WidgetUi.StatusOnly).status)
+        assertEquals("Failed to compute commute", rain.message)
+    }
+
+    @Test
+    fun testWrongTypesAndNonObjectDegradation() {
+        // peakProbabilityPercent is a string "abc" instead of int
+        val wrongTypeJson = """{"status":"ok","message":"Test","peakProbabilityPercent":"not_a_number"}"""
+        val rainResult = WidgetMapper.mapWidget("rain_alert_card", json.parseToJsonElement(wrongTypeJson))
+        assertTrue(rainResult is WidgetUi.StatusOnly)
+        assertEquals("error", (rainResult as WidgetUi.StatusOnly).status)
+
+        // non-object json element (e.g. primitive)
+        val primitiveElement = JsonPrimitive("just_a_string")
+        val primitiveResult = WidgetMapper.mapWidget("school_commute_card", primitiveElement)
+        assertTrue(primitiveResult is WidgetUi.StatusOnly)
+        assertEquals("Invalid data format", (primitiveResult as WidgetUi.StatusOnly).message)
     }
 }

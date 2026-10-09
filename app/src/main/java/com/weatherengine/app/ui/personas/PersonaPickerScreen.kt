@@ -42,7 +42,8 @@ class PersonaPickerViewModel(
     val availablePersonas = listOf(
         PersonaOption("health_conscious", "Health-conscious", "AQI, UV index, and heat alerts tailored for health and respiratory safety."),
         PersonaOption("outdoor_fitness", "Outdoor Fitness", "Wind speed, storm/fog alerts, humidity, and UV for sports and workouts."),
-        PersonaOption("commuter", "Commuter", "Road visibility, commute traffic updates, and sudden transit alerts.")
+        PersonaOption("commuter", "Commuter", "Road visibility, commute traffic updates, and sudden transit alerts."),
+        PersonaOption("parent", "Parent & Family", "School commute alerts, rain lookahead, and severe weather warnings for families.")
     )
 
     private val _uiState = MutableStateFlow(PersonaPickerUiState())
