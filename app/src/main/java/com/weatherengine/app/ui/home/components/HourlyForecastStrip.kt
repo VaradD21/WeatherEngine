@@ -39,17 +39,16 @@ fun HourlyForecastStrip(
     hours: List<HourlyRowUi>,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    com.weatherengine.app.ui.theme.GlassCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        shape = RoundedCornerShape(26.dp)
     ) {
-        Column(modifier = Modifier.padding(vertical = 14.dp)) {
+        Column(modifier = Modifier.padding(vertical = 16.dp)) {
             Text(
                 text = "Hourly Forecast (24 Hours)",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
             Spacer(modifier = Modifier.height(10.dp))
