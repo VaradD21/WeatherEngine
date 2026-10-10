@@ -1,7 +1,31 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
+}
+
+val configProps = Properties().apply {
+    val localFile = rootProject.file("local.properties")
+    if (localFile.exists()) {
+        localFile.inputStream().use { this.load(it) }
+    }
+    val configFile = rootProject.file("app-config.properties")
+    if (configFile.exists()) {
+        configFile.inputStream().use { this.load(it) }
+    }
+}
+
+val activeTarget = (configProps.getProperty("ACTIVE_TARGET") ?: "EMULATOR").trim()
+val emulatorUrl = (configProps.getProperty("EMULATOR_URL") ?: "http://10.0.2.2:8080").trim()
+val phoneLanUrl = (configProps.getProperty("PHONE_LAN_URL") ?: "http://192.168.1.100:8080").trim()
+val usbAdbUrl = (configProps.getProperty("USB_ADB_URL") ?: "http://localhost:8080").trim()
+
+val defaultUrl = when (activeTarget.uppercase()) {
+    "PHONE_LAN", "PHONE" -> phoneLanUrl
+    "USB_ADB", "USB" -> usbAdbUrl
+    else -> emulatorUrl
 }
 
 android {
@@ -19,6 +43,11 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField("String", "EMULATOR_URL", "\"$emulatorUrl\"")
+        buildConfigField("String", "PHONE_LAN_URL", "\"$phoneLanUrl\"")
+        buildConfigField("String", "USB_ADB_URL", "\"$usbAdbUrl\"")
+        buildConfigField("String", "DEFAULT_BASE_URL", "\"$defaultUrl\"")
     }
 
     buildTypes {
@@ -42,6 +71,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {

@@ -31,6 +31,8 @@ import kotlinx.coroutines.launch
 data class AuthUiState(
     val email: String = "",
     val password: String = "",
+    val username: String = "",
+    val phoneNumber: String = "",
     val isSignUp: Boolean = false,
     val isLoading: Boolean = false,
     val emailError: String? = null,
@@ -47,12 +49,13 @@ class AuthViewModel(
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    private val _navigateToNextScreen = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    val navigateToNextScreen: SharedFlow<Unit> = _navigateToNextScreen.asSharedFlow()
+    private val _navigateToNextScreen = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)
+    val navigateToNextScreen: SharedFlow<Boolean> = _navigateToNextScreen.asSharedFlow()
 
     fun onEmailChanged(email: String) = _uiState.update { it.copy(email = email, emailError = null, generalError = null) }
     fun onPasswordChanged(password: String) = _uiState.update { it.copy(password = password, passwordError = null, generalError = null) }
-    fun toggleAuthMode() = setAuthMode(!_uiState.value.isSignUp)
+    fun onUsernameChanged(name: String) = _uiState.update { it.copy(username = name) }
+    fun onPhoneNumberChanged(phone: String) = _uiState.update { it.copy(phoneNumber = phone) }
 
     fun setAuthMode(isSignUp: Boolean) = _uiState.update {
         if (it.isSignUp == isSignUp) it else it.copy(isSignUp = isSignUp, emailError = null, passwordError = null, generalError = null)
@@ -74,7 +77,16 @@ class AuthViewModel(
         }
         _uiState.update { it.copy(isLoading = true, generalError = null) }
         viewModelScope.launch(ioDispatcher) {
-            val res = if (s.isSignUp) repository.signup(s.email.trim(), s.password) else repository.login(s.email.trim(), s.password)
+            val res = if (s.isSignUp) {
+                repository.signup(
+                    email = s.email.trim(),
+                    password = s.password,
+                    username = s.username.trim().takeIf { it.isNotEmpty() },
+                    phoneNumber = s.phoneNumber.trim().takeIf { it.isNotEmpty() }
+                )
+            } else {
+                repository.login(s.email.trim(), s.password)
+            }
             when (res) {
                 is NetworkResult.Success -> {
                     settingsStore.saveAuth(res.data.token, res.data.email)
@@ -85,7 +97,7 @@ class AuthViewModel(
                         }
                     }
                     _uiState.update { it.copy(isLoading = false) }
-                    _navigateToNextScreen.tryEmit(Unit)
+                    _navigateToNextScreen.tryEmit(s.isSignUp)
                 }
                 is NetworkResult.Failure -> _uiState.update { it.copy(isLoading = false, generalError = res.message) }
             }
@@ -96,14 +108,16 @@ class AuthViewModel(
 @Composable
 fun AuthScreen(
     viewModel: AuthViewModel,
-    onAuthSuccess: () -> Unit,
-    onSkip: () -> Unit = onAuthSuccess
+    onAuthSuccess: (isNewSignup: Boolean) -> Unit,
+    onSkip: () -> Unit = { onAuthSuccess(false) }
 ) {
     val state by viewModel.uiState.collectAsState()
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        viewModel.navigateToNextScreen.collect { onAuthSuccess() }
+        viewModel.navigateToNextScreen.collect { isSignUp ->
+            onAuthSuccess(isSignUp)
+        }
     }
 
     Scaffold { innerPadding ->
@@ -119,7 +133,7 @@ fun AuthScreen(
             Text("WeatherEngine", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.height(4.dp))
             Text(
-                text = if (state.isSignUp) "Create an account to sync personas" else "Sign in to your weather dashboard",
+                text = if (state.isSignUp) "Create your account" else "Sign in to your weather dashboard",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -130,6 +144,27 @@ fun AuthScreen(
                 Tab(selected = state.isSignUp, onClick = { viewModel.setAuthMode(true) }, text = { Text("Sign Up", fontWeight = FontWeight.SemiBold) })
             }
             Spacer(Modifier.height(20.dp))
+
+            if (state.isSignUp) {
+                OutlinedTextField(
+                    value = state.username,
+                    onValueChange = viewModel::onUsernameChanged,
+                    label = { Text("Username / Full name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.phoneNumber,
+                    onValueChange = viewModel::onPhoneNumberChanged,
+                    label = { Text("Phone number (optional for SMS)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                )
+                Spacer(Modifier.height(8.dp))
+            }
 
             OutlinedTextField(
                 value = state.email,

@@ -3,6 +3,9 @@
 *.env
 .env.*
 !.env.example
+app-config.properties
+**/app-config.properties
+!**/app-config.properties.example
 firebase-service-account.json
 google-services.json
 *.jks

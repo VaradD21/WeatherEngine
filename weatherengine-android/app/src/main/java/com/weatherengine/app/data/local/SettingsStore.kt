@@ -31,9 +31,22 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
         val KEY_CACHED_HOMEPAGE_JSON = stringPreferencesKey("cached_homepage_json")
         val KEY_CACHED_HOMEPAGE_TIME = longPreferencesKey("cached_homepage_time")
 
-        const val DEFAULT_BASE_URL = "http://10.0.2.2:8080"
+        const val EMULATOR_BASE_URL = "http://10.0.2.2:8080"
+        const val USB_ADB_BASE_URL = "http://localhost:8080"
+        val DEFAULT_PHONE_LAN_URL: String = try {
+            com.weatherengine.app.BuildConfig.PHONE_LAN_URL
+        } catch (_: Throwable) {
+            "http://192.168.1.100:8080"
+        }
+        val DEFAULT_BASE_URL: String = try {
+            com.weatherengine.app.BuildConfig.DEFAULT_BASE_URL
+        } catch (_: Throwable) {
+            EMULATOR_BASE_URL
+        }
         const val DEFAULT_LAT = 19.0760
         const val DEFAULT_LON = 72.8777
+
+        val KEY_SAVED_PHONE_URL = stringPreferencesKey("saved_phone_url")
 
         val KEY_CACHED_FORECAST_JSON = stringPreferencesKey("cached_forecast_json")
         val KEY_CACHED_FORECAST_TIME = longPreferencesKey("cached_forecast_time")
@@ -141,6 +154,16 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
         dataStore?.edit { prefs ->
             prefs[KEY_SCHOOL_START] = start
             prefs[KEY_SCHOOL_END] = end
+        }
+    }
+
+    open val savedPhoneUrlFlow: Flow<String> = safePreferences.map {
+        it[KEY_SAVED_PHONE_URL] ?: DEFAULT_PHONE_LAN_URL
+    }
+
+    open suspend fun savePhoneUrl(url: String) {
+        dataStore?.edit { prefs ->
+            prefs[KEY_SAVED_PHONE_URL] = url
         }
     }
 }

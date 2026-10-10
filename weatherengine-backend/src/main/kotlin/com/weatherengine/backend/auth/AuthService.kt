@@ -46,7 +46,9 @@ data class SignupRequest(
     val email: String,
     @field:NotBlank(message = "Password is required")
     @field:Size(min = 8, max = 128, message = "Password must be at least 8 characters")
-    val password: String
+    val password: String,
+    val username: String? = null,
+    val phoneNumber: String? = null
 )
 
 data class LoginRequest(
@@ -136,7 +138,14 @@ class AuthService(
         if (userRepository.existsByEmail(email)) {
             throw ApiException(HttpStatus.CONFLICT, "Email is already registered")
         }
-        val user = userRepository.save(User(email = email, passwordHash = passwordEncoder.encode(request.password)))
+        val user = userRepository.save(
+            User(
+                email = email,
+                passwordHash = passwordEncoder.encode(request.password),
+                username = request.username?.trim()?.takeIf { it.isNotEmpty() },
+                phoneNumber = request.phoneNumber?.trim()?.takeIf { it.isNotEmpty() }
+            )
+        )
         personaRepository.findByCode("health_conscious")?.let { defaultPersona ->
             userPersonaRepository.save(
                 UserPersona(UserPersonaId(user.id!!, defaultPersona.id!!), user, defaultPersona)

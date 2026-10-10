@@ -21,6 +21,8 @@ import com.weatherengine.app.data.di.AppContainer
 import com.weatherengine.app.data.location.AndroidLocationProvider
 import com.weatherengine.app.ui.auth.AuthScreen
 import com.weatherengine.app.ui.auth.AuthViewModel
+import com.weatherengine.app.ui.health.HealthProfileScreen
+import com.weatherengine.app.ui.health.HealthProfileViewModel
 import com.weatherengine.app.ui.home.HomeScreen
 import com.weatherengine.app.ui.home.HomeViewModel
 import com.weatherengine.app.ui.personas.PersonaPickerScreen
@@ -41,6 +43,7 @@ class WeatherEngineApp : Application() {
 
 sealed class Screen(val route: String) {
     data object Auth : Screen("auth")
+    data object HealthProfile : Screen("health_profile")
     data object PersonaPicker : Screen("persona_picker")
     data object Home : Screen("home")
     data object Settings : Screen("settings")
@@ -80,8 +83,30 @@ fun WeatherEngineAppNav(app: ComponentActivity) {
     NavHost(navController = navController, startDestination = Screen.Auth.route) {
         composable(Screen.Auth.route) {
             val vm: AuthViewModel = viewModel(factory = vmFactory { AuthViewModel(container.repository, container.settingsStore) })
-            val goHome = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Auth.route) { inclusive = true } } }
-            AuthScreen(viewModel = vm, onAuthSuccess = goHome, onSkip = goHome)
+            AuthScreen(
+                viewModel = vm,
+                onAuthSuccess = { isNewSignup ->
+                    if (isNewSignup) {
+                        navController.navigate(Screen.HealthProfile.route) { popUpTo(Screen.Auth.route) { inclusive = true } }
+                    } else {
+                        navController.navigate(Screen.Home.route) { popUpTo(Screen.Auth.route) { inclusive = true } }
+                    }
+                },
+                onSkip = {
+                    navController.navigate(Screen.Home.route) { popUpTo(Screen.Auth.route) { inclusive = true } }
+                }
+            )
+        }
+        composable(Screen.HealthProfile.route) {
+            val vm: HealthProfileViewModel = viewModel(factory = vmFactory {
+                HealthProfileViewModel(container.repository)
+            })
+            HealthProfileScreen(
+                viewModel = vm,
+                onComplete = {
+                    navController.navigate(Screen.Home.route) { popUpTo(Screen.HealthProfile.route) { inclusive = true } }
+                }
+            )
         }
         composable(Screen.Home.route) {
             val vm: HomeViewModel = viewModel(factory = vmFactory {

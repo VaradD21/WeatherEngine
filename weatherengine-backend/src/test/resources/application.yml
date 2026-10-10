@@ -39,3 +39,8 @@ app:
     open-meteo:
       forecast-url: https://api.open-meteo.com/v1/forecast
       air-quality-url: https://air-quality-api.open-meteo.com/v1/air-quality
+    weather-api:
+      key: ""
+      url: https://api.weatherapi.com/v1/forecast.json
+    free-open-api:
+      url: https://freeopenapi.dev/api/v1/weather

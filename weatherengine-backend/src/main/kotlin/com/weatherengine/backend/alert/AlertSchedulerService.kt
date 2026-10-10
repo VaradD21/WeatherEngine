@@ -1,5 +1,8 @@
 package com.weatherengine.backend.alert
 
+import com.weatherengine.backend.user.UserHealthProfile
+import com.weatherengine.backend.user.UserHealthProfileRepository
+import com.weatherengine.backend.weather.WeatherBundleDto
 import com.weatherengine.backend.weather.WeatherCacheService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
@@ -13,7 +16,8 @@ import java.util.Locale
 class AlertSchedulerService(
     private val subscriptionRepository: AlertSubscriptionRepository,
     private val alertLogRepository: AlertLogRepository,
-    private val weatherCacheService: WeatherCacheService
+    private val weatherCacheService: WeatherCacheService,
+    private val userHealthProfileRepository: UserHealthProfileRepository
 ) {
     private val logger = LoggerFactory.getLogger(AlertSchedulerService::class.java)
 
@@ -45,7 +49,8 @@ class AlertSchedulerService(
                 continue
             }
 
-            val triggeredType = detectAlertCondition(bundle) ?: continue
+            val healthProfile = sub.user.id?.let { userHealthProfileRepository.findById(it).orElse(null) }
+            val triggeredType = detectAlertCondition(bundle, healthProfile) ?: continue
             val recentLogs = alertLogRepository.findByLocationIdAndAlertTypeAndSentAtAfter(
                 locationId = locationId,
                 alertType = triggeredType,
@@ -71,20 +76,57 @@ class AlertSchedulerService(
         }
     }
 
-    internal fun detectAlertCondition(bundle: com.weatherengine.backend.weather.WeatherBundleDto): String? {
+    internal fun detectAlertCondition(
+        bundle: WeatherBundleDto,
+        profile: UserHealthProfile? = null
+    ): String? {
         val current = bundle.forecast.current
+        val hourly = bundle.forecast.hourly
+        val daily = bundle.forecast.daily
+
         val weatherCode = current?.weatherCode ?: 0
         if (weatherCode in setOf(95, 96, 99)) {
             return "STORM_ALERT"
         }
+
         val apparentTemp = current?.apparentTemperature ?: current?.temperature2m ?: 25.0
         if (apparentTemp >= 38.0) {
             return "EXTREME_HEAT"
         }
+
         val aqi = bundle.airQuality?.current?.usAqi ?: 0
+        val uv = hourly?.uvIndex?.firstOrNull { it != null } ?: daily?.uvIndexMax?.firstOrNull() ?: 0.0
+        val humidity = current?.relativeHumidity2m ?: 50
+
+        if (profile != null && profile.alertsEnabled) {
+            if (aqi >= profile.aqiThreshold) {
+                return if (profile.hasAsthma) "ASTHMA_AQI_ALERT" else "HIGH_AQI"
+            }
+            if (uv >= profile.uvThreshold) {
+                return if (profile.hasSkinSensitivity) "SKIN_UV_ALERT" else "HIGH_UV_ALERT"
+            }
+            if (humidity >= profile.humidityThreshold) {
+                return "HIGH_HUMIDITY_ALERT"
+            }
+            if (profile.hasAllergies) {
+                val pollen = listOfNotNull(
+                    bundle.airQuality?.current?.grassPollen,
+                    bundle.airQuality?.current?.birchPollen,
+                    bundle.airQuality?.current?.ragweedPollen
+                ).maxOrNull() ?: 0.0
+                if (pollen >= 50.0) {
+                    return "POLLEN_ALLERGY_ALERT"
+                }
+            }
+        }
+
         if (aqi >= 151) {
             return "HIGH_AQI"
         }
+
         return null
     }
+
+    internal fun detectAlertCondition(bundle: WeatherBundleDto): String? =
+        detectAlertCondition(bundle, null)
 }
