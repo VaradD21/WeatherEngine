@@ -57,6 +57,11 @@ app:
     open-meteo:
       forecast-url: ${OPEN_METEO_FORECAST_URL:https://api.open-meteo.com/v1/forecast}
       air-quality-url: ${OPEN_METEO_AIR_QUALITY_URL:https://air-quality-api.open-meteo.com/v1/air-quality}
+    weather-api:
+      key: ${WEATHERAPI_KEY:}
+      url: ${WEATHERAPI_URL:https://api.weatherapi.com/v1/forecast.json}
+    free-open-api:
+      url: ${FREEOPENAPI_BASE_URL:https://freeopenapi.dev/api/v1/weather}
 
 logging:
   level:

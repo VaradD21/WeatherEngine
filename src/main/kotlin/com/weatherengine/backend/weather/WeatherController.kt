@@ -19,7 +19,8 @@ import kotlin.math.roundToInt
 
 @Service
 class WeatherCacheService(
-    private val openMeteoClient: OpenMeteoClient
+    private val openMeteoClient: OpenMeteoClient,
+    private val weatherApiClient: WeatherApiClient? = null
 ) {
     @Cacheable(
         value = ["weather-bundle-v2"],
@@ -27,7 +28,34 @@ class WeatherCacheService(
     )
     fun getCachedWeatherBundle(lat: Double, lon: Double): WeatherBundleDto {
         val forecast = openMeteoClient.fetchForecast(lat, lon)
-        val airQuality = openMeteoClient.fetchAirQuality(lat, lon)
+        var airQuality = openMeteoClient.fetchAirQuality(lat, lon)
+
+        if ((airQuality?.current?.usAqi == null) && weatherApiClient?.isConfigured() == true) {
+            val secondary = weatherApiClient.fetchCurrentAndAqi(lat, lon)
+            val epaIndex = secondary?.current?.airQuality?.usEpaIndex
+            val mappedAqi = when (epaIndex) {
+                1 -> 25
+                2 -> 75
+                3 -> 125
+                4 -> 175
+                5 -> 250
+                6 -> 350
+                else -> null
+            }
+            if (mappedAqi != null) {
+                airQuality = OpenMeteoAirQualityResponse(
+                    current = OpenMeteoCurrentAirQuality(
+                        usAqi = mappedAqi,
+                        pm25 = secondary?.current?.airQuality?.pm2_5,
+                        grassPollen = airQuality?.current?.grassPollen,
+                        birchPollen = airQuality?.current?.birchPollen,
+                        alderPollen = airQuality?.current?.alderPollen,
+                        ragweedPollen = airQuality?.current?.ragweedPollen
+                    )
+                )
+            }
+        }
+
         return WeatherBundleDto(
             forecast = forecast,
             airQuality = airQuality,
@@ -132,12 +160,28 @@ class WidgetBuilder {
                     aqiCurrent?.alderPollen?.let { "Alder" to it },
                     aqiCurrent?.ragweedPollen?.let { "Ragweed" to it }
                 ).maxByOrNull { it.second }
-                val msg = if (top != null) {
-                    "${top.first} pollen: ${top.second.roundToInt()} grains/m³"
+                if (top != null && top.second > 0.0) {
+                    val count = top.second.roundToInt()
+                    val level = when {
+                        count >= 90 -> "Very High"
+                        count >= 50 -> "High"
+                        count >= 20 -> "Moderate"
+                        else -> "Low"
+                    }
+                    mapOf(
+                        "status" to "ok",
+                        "pollenType" to top.first,
+                        "grainsCount" to count,
+                        "level" to level,
+                        "message" to "${top.first} pollen is $level ($count grains/m³)"
+                    )
                 } else {
-                    "Pollen count not reported for this region"
+                    mapOf(
+                        "status" to "ok",
+                        "level" to "Low",
+                        "message" to "Pollen levels are low or minimal for this region"
+                    )
                 }
-                mapOf("status" to "unavailable", "message" to msg)
             }
             "best_running_hours_card" -> {
                 val temp = current?.temperature2m?.roundToInt() ?: 24

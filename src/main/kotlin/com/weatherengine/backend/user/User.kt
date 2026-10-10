@@ -15,7 +15,13 @@ class User(
     var email: String,
 
     @Column(name = "password_hash", nullable = false)
-    var passwordHash: String
+    var passwordHash: String,
+
+    @Column(name = "username")
+    var username: String? = null,
+
+    @Column(name = "phone_number")
+    var phoneNumber: String? = null
 )
 
 interface UserRepository : JpaRepository<User, UUID> {
