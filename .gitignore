@@ -6,6 +6,8 @@
 app-config.properties
 **/app-config.properties
 !**/app-config.properties.example
+local.properties
+**/local.properties
 firebase-service-account.json
 google-services.json
 *.jks
@@ -40,7 +42,7 @@ test-results/
 **/test-results/
 lint-results*
 
-# Android Studio / IntelliJ / VS Code / AI Tooling
+# IDE, Editors & Agent Tooling
 .idea/
 **/.idea/
 *.iml
@@ -50,10 +52,13 @@ lint-results*
 .vscode/
 **/.vscode/
 .claude/
+**/.claude/
 .cursor/
+**/.cursor/
 .gemini/
-local.properties
-**/local.properties
+**/.gemini/
+.antigravity/
+**/.antigravity/
 captures/
 **/captures/
 .externalNativeBuild/

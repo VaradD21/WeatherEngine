@@ -53,21 +53,43 @@ val Typography = Typography(
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = AuroraCyan,
+    onPrimary = Color(0xFF003549),
+    primaryContainer = Color(0xFF0A2540),
+    onPrimaryContainer = Color(0xFFC7EBFF),
+    secondary = AuroraIndigo,
+    onSecondary = Color(0xFF1E293B),
+    secondaryContainer = Color(0xFF1E293B),
+    onSecondaryContainer = Color(0xFFE2E8F0),
+    surface = Color(0xFF0E1626),
+    onSurface = Color(0xFFF1F5F9),
+    surfaceVariant = Color(0xFF182234),
+    onSurfaceVariant = Color(0xFF94A3B8),
+    background = Color(0xFF090D16),
+    onBackground = Color(0xFFF1F5F9)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary = Color(0xFF0284C7),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFE0F2FE),
+    onPrimaryContainer = Color(0xFF0369A1),
+    secondary = Color(0xFF6366F1),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFEEF2FF),
+    onSecondaryContainer = Color(0xFF4338CA),
+    surface = Color.White,
+    onSurface = Color(0xFF0F172A),
+    surfaceVariant = Color(0xFFF1F5F9),
+    onSurfaceVariant = Color(0xFF64748B),
+    background = Color(0xFFF8FAFC),
+    onBackground = Color(0xFF0F172A)
 )
 
 @Composable
 fun WeatherEngineTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

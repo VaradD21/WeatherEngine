@@ -32,13 +32,17 @@ fun PollenCard(
         else -> Pair(SuccessGreen, pollen.level)
     }
 
-    Card(
+    com.weatherengine.app.ui.theme.GlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = "Pollen count: ${pollen.message}" },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        border = BorderStroke(1.dp, statusColor.copy(alpha = 0.5f))
+        shape = RoundedCornerShape(24.dp),
+        borderBrush = androidx.compose.ui.graphics.Brush.linearGradient(
+            listOf(
+                statusColor.copy(alpha = 0.5f),
+                statusColor.copy(alpha = 0.15f)
+            )
+        )
     ) {
         Row(
             modifier = Modifier
@@ -93,13 +97,17 @@ fun AqiCard(
         else -> Pair(SuccessGreen, "Good")
     }
 
-    Card(
+    com.weatherengine.app.ui.theme.GlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = "Air Quality Index is ${aqi.aqi}, $desc" },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        border = BorderStroke(1.dp, statusColor.copy(alpha = 0.5f))
+        shape = RoundedCornerShape(24.dp),
+        borderBrush = androidx.compose.ui.graphics.Brush.linearGradient(
+            listOf(
+                statusColor.copy(alpha = 0.5f),
+                statusColor.copy(alpha = 0.15f)
+            )
+        )
     ) {
         Row(
             modifier = Modifier

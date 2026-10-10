@@ -204,12 +204,16 @@ fun AuthScreen(
             Button(
                 onClick = viewModel::submit,
                 enabled = !state.isLoading,
-                modifier = Modifier.fillMaxWidth().height(48.dp)
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                modifier = Modifier.fillMaxWidth().height(52.dp)
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                 } else {
-                    Text(if (state.isSignUp) "Sign Up" else "Log In")
+                    Text(if (state.isSignUp) "Sign Up" else "Log In", fontWeight = FontWeight.Bold)
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -217,9 +221,10 @@ fun AuthScreen(
             OutlinedButton(
                 onClick = onSkip,
                 enabled = !state.isLoading,
-                modifier = Modifier.fillMaxWidth().height(48.dp)
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp)
             ) {
-                Text("Continue as Guest")
+                Text("Continue as Guest", fontWeight = FontWeight.SemiBold)
             }
         }
     }

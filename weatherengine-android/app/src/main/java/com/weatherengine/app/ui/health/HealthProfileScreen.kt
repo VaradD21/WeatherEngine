@@ -60,6 +60,7 @@ fun HealthProfileScreen(
             // Section 1: Conditions & Sensitivities
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(Modifier.padding(16.dp)) {
@@ -104,6 +105,7 @@ fun HealthProfileScreen(
             // Section 2: Alert Thresholds
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(Modifier.padding(16.dp)) {
@@ -164,6 +166,7 @@ fun HealthProfileScreen(
             // Section 3: Notification Toggle
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(
@@ -196,14 +199,18 @@ fun HealthProfileScreen(
             Button(
                 onClick = viewModel::saveProfile,
                 enabled = !state.isLoading,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp)
+                    .height(52.dp)
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                 } else {
-                    Text("Save & Continue")
+                    Text("Save & Continue", fontWeight = FontWeight.Bold)
                 }
             }
 

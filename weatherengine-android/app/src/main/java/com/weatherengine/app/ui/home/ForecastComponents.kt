@@ -45,15 +45,18 @@ import com.weatherengine.app.core.forecast.DayForecastUi
 
 @Composable
 fun CurrentConditionsCard(current: CurrentWeatherUi, updatedAt: String, modifier: Modifier = Modifier) {
-    Card(
+    com.weatherengine.app.ui.theme.GlassCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        shape = RoundedCornerShape(28.dp),
+        borderBrush = Brush.linearGradient(
+            listOf(
+                Color.White.copy(alpha = 0.35f),
+                Color(0xFF38BDF8).copy(alpha = 0.2f),
+                Color.White.copy(alpha = 0.05f)
+            )
         )
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(24.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -62,34 +65,45 @@ fun CurrentConditionsCard(current: CurrentWeatherUi, updatedAt: String, modifier
                 Column {
                     Text(
                         text = current.temperatureFormatted,
-                        fontSize = 54.sp,
-                        fontWeight = FontWeight.Bold,
-                        lineHeight = 56.sp
+                        fontSize = 58.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        lineHeight = 60.sp,
+                        letterSpacing = (-1).sp
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = current.condition,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
                     )
                     if (current.apparentTemperatureFormatted.isNotBlank()) {
                         Text(
                             text = current.apparentTemperatureFormatted,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
-                Icon(
-                    imageVector = weatherIconFor(current.iconKey),
-                    contentDescription = current.condition,
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = weatherIconFor(current.iconKey),
+                        contentDescription = current.condition,
+                        modifier = Modifier.size(46.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
 
+            Spacer(modifier = Modifier.height(20.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f))
             Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
-            Spacer(modifier = Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -107,11 +121,11 @@ fun CurrentConditionsCard(current: CurrentWeatherUi, updatedAt: String, modifier
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = updatedAt,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 modifier = Modifier.align(Alignment.End)
             )
         }
@@ -120,25 +134,24 @@ fun CurrentConditionsCard(current: CurrentWeatherUi, updatedAt: String, modifier
 
 @Composable
 fun SevenDayForecastCard(days: List<DayForecastUi>, modifier: Modifier = Modifier) {
-    Card(
+    com.weatherengine.app.ui.theme.GlassCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        shape = RoundedCornerShape(26.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Text(
                 text = "7-Day Forecast",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             days.forEachIndexed { index, day ->
                 DayForecastRow(day = day)
                 if (index < days.lastIndex) {
                     HorizontalDivider(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.10f),
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
                 }

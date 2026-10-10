@@ -39,15 +39,19 @@ fun SchoolCommuteCard(
     val runLabel = if (commute.run.equals("morning", ignoreCase = true)) "Morning School Run" else "Afternoon School Run"
     val a11ySummary = "$runLabel verdict is $verdictText. Window: ${commute.window} on ${commute.date}."
 
-    Card(
+    com.weatherengine.app.ui.theme.GlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = a11ySummary },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        border = BorderStroke(1.dp, verdictColor.copy(alpha = 0.5f))
+        shape = RoundedCornerShape(24.dp),
+        borderBrush = androidx.compose.ui.graphics.Brush.linearGradient(
+            listOf(
+                verdictColor.copy(alpha = 0.6f),
+                verdictColor.copy(alpha = 0.15f)
+            )
+        )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(18.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -126,14 +130,13 @@ fun RainAlertCard(
     rain: WidgetUi.RainAlert,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    com.weatherengine.app.ui.theme.GlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = "Rain Lookahead: ${rain.message}. Peak chance ${rain.peakProbabilityPercent}%." },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        shape = RoundedCornerShape(24.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Default.WaterDrop,
@@ -177,15 +180,19 @@ fun SevereWeatherCard(
     val hasAlerts = severe.alerts.isNotEmpty()
     val borderColor = if (hasAlerts) ErrorRed.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant
 
-    Card(
+    com.weatherengine.app.ui.theme.GlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = "Severe Weather: ${severe.message}." },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        border = BorderStroke(1.dp, borderColor)
+        shape = RoundedCornerShape(24.dp),
+        borderBrush = androidx.compose.ui.graphics.Brush.linearGradient(
+            listOf(
+                borderColor,
+                borderColor.copy(alpha = 0.2f)
+            )
+        )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = if (hasAlerts) Icons.Default.Warning else Icons.Default.CheckCircle,

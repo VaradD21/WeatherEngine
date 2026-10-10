@@ -84,19 +84,23 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent
+                ),
                 title = {
                     Column {
                         Text(
                             text = "WeatherEngine",
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-0.5).sp
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.LocationOn,
                                 contentDescription = null,
                                 modifier = Modifier.size(12.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
                                 text = locationLabel,
@@ -128,11 +132,14 @@ fun HomeScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        com.weatherengine.app.ui.theme.AuroraBackground(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
             when (val fState = forecastState) {
                 is ForecastUiState.Loading -> {
                     Box(
@@ -293,4 +300,5 @@ fun HomeScreen(
             }
         }
     }
+}
 }
