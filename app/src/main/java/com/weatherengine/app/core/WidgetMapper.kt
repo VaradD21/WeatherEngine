@@ -28,6 +28,14 @@ sealed class WidgetUi(open val type: String) {
         val message: String?
     ) : WidgetUi(type)
 
+    data class Pollen(
+        override val type: String = "pollen_card",
+        val pollenType: String = "Pollen",
+        val grainsCount: Int = 0,
+        val level: String = "Low",
+        val message: String
+    ) : WidgetUi(type)
+
     data class SunriseSunset(
         override val type: String = "sunrise_sunset_card",
         val sunrise: String,
@@ -135,6 +143,13 @@ object WidgetMapper {
                     val uvStatus = dataElement["status"]?.jsonPrimitive?.contentOrNull
                     val message = dataElement["message"]?.jsonPrimitive?.contentOrNull
                     WidgetUi.Uv(type = type, status = uvStatus, uvIndex = uvIndex, message = message)
+                }
+                "pollen_card" -> {
+                    val message = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: "Pollen count normal"
+                    val pollenType = dataElement["pollenType"]?.jsonPrimitive?.contentOrNull ?: "Pollen"
+                    val grains = dataElement["grainsCount"]?.jsonPrimitive?.intOrNull ?: 0
+                    val level = dataElement["level"]?.jsonPrimitive?.contentOrNull ?: "Low"
+                    WidgetUi.Pollen(type = type, pollenType = pollenType, grainsCount = grains, level = level, message = message)
                 }
                 "sunrise_sunset_card" -> {
                     val sunrise = dataElement["sunrise"]?.jsonPrimitive?.contentOrNull ?: error("Missing sunrise")

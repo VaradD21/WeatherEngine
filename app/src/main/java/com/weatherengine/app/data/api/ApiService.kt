@@ -1,6 +1,7 @@
 package com.weatherengine.app.data.api
 
 import com.weatherengine.app.data.model.AuthResponse
+import com.weatherengine.app.data.model.HealthProfileDto
 import com.weatherengine.app.data.model.HomepageResponse
 import com.weatherengine.app.data.model.LoginRequest
 import com.weatherengine.app.data.model.PersonaDto
@@ -12,6 +13,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Query
 
 sealed class NetworkResult<out T> {
@@ -86,4 +88,12 @@ interface ApiService {
         @Query("lat") lat: Double,
         @Query("lon") lon: Double
     ): Response<WeatherBundleDto>
+
+    @GET("api/users/me/health-profile")
+    suspend fun getHealthProfile(): Response<HealthProfileDto>
+
+    @PUT("api/users/me/health-profile")
+    suspend fun updateHealthProfile(
+        @Body request: HealthProfileDto
+    ): Response<HealthProfileDto>
 }

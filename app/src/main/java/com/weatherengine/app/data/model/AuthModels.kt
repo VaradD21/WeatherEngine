@@ -8,7 +8,21 @@ import kotlinx.serialization.json.JsonElement
 @Serializable
 data class SignupRequest(
     val email: String,
-    val password: String
+    val password: String,
+    val username: String? = null,
+    val phoneNumber: String? = null
+)
+
+@Serializable
+data class HealthProfileDto(
+    val hasAsthma: Boolean = false,
+    val hasAllergies: Boolean = false,
+    val hasSkinSensitivity: Boolean = false,
+    val aqiThreshold: Int = 100,
+    val uvThreshold: Int = 6,
+    val humidityThreshold: Int = 70,
+    val pollenThreshold: String = "MODERATE",
+    val alertsEnabled: Boolean = true
 )
 
 @Serializable

@@ -262,6 +262,8 @@ fun HomeScreen(
                                         is WidgetUi.SchoolCommute -> SchoolCommuteCard(commute = widget)
                                         is WidgetUi.RainAlert -> RainAlertCard(rain = widget)
                                         is WidgetUi.SevereWeather -> SevereWeatherCard(severe = widget)
+                                        is WidgetUi.Pollen -> PollenCard(pollen = widget)
+                                        is WidgetUi.Aqi -> AqiCard(aqi = widget)
                                         is WidgetUi.StatusOnly -> StatusOnlyCard(widget = widget)
                                         else -> {}
                                     }

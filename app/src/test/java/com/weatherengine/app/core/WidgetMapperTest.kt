@@ -156,4 +156,25 @@ class WidgetMapperTest {
         assertTrue(primitiveResult is WidgetUi.StatusOnly)
         assertEquals("Invalid data format", (primitiveResult as WidgetUi.StatusOnly).message)
     }
+
+    @Test
+    fun testPollenCardMapping() {
+        val pollenJson = """
+            {
+                "status": "ok",
+                "pollenType": "Birch",
+                "grainsCount": 65,
+                "level": "High",
+                "message": "Birch pollen is High (65 grains/m³)"
+            }
+        """.trimIndent()
+        val result = WidgetMapper.mapWidget("pollen_card", json.parseToJsonElement(pollenJson))
+        assertTrue(result is WidgetUi.Pollen)
+        val pollen = result as WidgetUi.Pollen
+        assertEquals("pollen_card", pollen.type)
+        assertEquals("Birch", pollen.pollenType)
+        assertEquals(65, pollen.grainsCount)
+        assertEquals("High", pollen.level)
+        assertEquals("Birch pollen is High (65 grains/m³)", pollen.message)
+    }
 }

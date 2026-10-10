@@ -6,6 +6,7 @@ import com.weatherengine.app.data.api.FailureKind
 import com.weatherengine.app.data.api.NetworkResult
 import com.weatherengine.app.data.local.SettingsStore
 import com.weatherengine.app.data.model.AuthResponse
+import com.weatherengine.app.data.model.HealthProfileDto
 import com.weatherengine.app.data.model.HomepageResponse
 import com.weatherengine.app.data.model.LoginRequest
 import com.weatherengine.app.data.model.PersonaDto
@@ -23,10 +24,22 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 
 interface WeatherEngineRepository {
-    suspend fun signup(email: String, password: String): NetworkResult<AuthResponse>
+    suspend fun signup(email: String, password: String): NetworkResult<AuthResponse> =
+        signup(email, password, null, null)
+    suspend fun signup(
+        email: String,
+        password: String,
+        username: String?,
+        phoneNumber: String?
+    ): NetworkResult<AuthResponse> =
+        signup(email, password)
     suspend fun login(email: String, password: String): NetworkResult<AuthResponse>
     suspend fun getPersonas(): NetworkResult<List<PersonaDto>>
     suspend fun setPersonas(codes: List<String>): NetworkResult<List<PersonaDto>>
+    suspend fun getHealthProfile(): NetworkResult<HealthProfileDto> =
+        NetworkResult.Success(HealthProfileDto())
+    suspend fun updateHealthProfile(profile: HealthProfileDto): NetworkResult<HealthProfileDto> =
+        NetworkResult.Success(profile)
     suspend fun getHomepage(lat: Double, lon: Double): NetworkResult<HomepageResponse> =
         getHomepage(lat, lon, null, null)
     suspend fun getHomepage(
@@ -47,9 +60,37 @@ class RemoteRepository(
     private val _sessionExpiredEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val sessionExpiredEvents: SharedFlow<Unit> = _sessionExpiredEvents.asSharedFlow()
 
-    override suspend fun signup(email: String, password: String): NetworkResult<AuthResponse> {
+    override suspend fun signup(
+        email: String,
+        password: String,
+        username: String?,
+        phoneNumber: String?
+    ): NetworkResult<AuthResponse> {
         return safeApiCall(isProtected = false) {
-            apiServiceProvider().signup(SignupRequest(email, password))
+            apiServiceProvider().signup(
+                SignupRequest(
+                    email = email,
+                    password = password,
+                    username = username,
+                    phoneNumber = phoneNumber
+                )
+            )
+        }
+    }
+
+    override suspend fun signup(email: String, password: String): NetworkResult<AuthResponse> {
+        return signup(email, password, null, null)
+    }
+
+    override suspend fun getHealthProfile(): NetworkResult<HealthProfileDto> {
+        return safeApiCall(isProtected = true) {
+            apiServiceProvider().getHealthProfile()
+        }
+    }
+
+    override suspend fun updateHealthProfile(profile: HealthProfileDto): NetworkResult<HealthProfileDto> {
+        return safeApiCall(isProtected = true) {
+            apiServiceProvider().updateHealthProfile(profile)
         }
     }
 

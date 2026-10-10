@@ -1,0 +1,9 @@
+# ===================================================================
+# WeatherEngine Android - Network Target Configuration Template
+# ===================================================================
+# Copy to app-config.properties or set in local.properties:
+ACTIVE_TARGET=EMULATOR
+
+EMULATOR_URL=http://10.0.2.2:8080
+PHONE_LAN_URL=http://192.168.1.100:8080
+USB_ADB_URL=http://localhost:8080
