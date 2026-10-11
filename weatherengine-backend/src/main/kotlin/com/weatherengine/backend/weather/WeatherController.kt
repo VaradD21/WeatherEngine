@@ -23,12 +23,13 @@ class WeatherCacheService(
     private val weatherApiClient: WeatherApiClient? = null
 ) {
     @Cacheable(
-        value = ["weather-bundle-v2"],
-        key = "'v2:' + T(java.lang.String).format(T(java.util.Locale).US, '%.2f,%.2f', #lat, #lon)"
+        value = ["weather-bundle-v3"],
+        key = "'v3:' + T(java.lang.String).format(T(java.util.Locale).US, '%.2f,%.2f', #lat, #lon)"
     )
     fun getCachedWeatherBundle(lat: Double, lon: Double): WeatherBundleDto {
         val forecast = openMeteoClient.fetchForecast(lat, lon)
         var airQuality = openMeteoClient.fetchAirQuality(lat, lon)
+        val marine = openMeteoClient.fetchMarine(lat, lon)
 
         if ((airQuality?.current?.usAqi == null) && weatherApiClient?.isConfigured() == true) {
             val secondary = weatherApiClient.fetchCurrentAndAqi(lat, lon)
@@ -59,6 +60,7 @@ class WeatherCacheService(
         return WeatherBundleDto(
             forecast = forecast,
             airQuality = airQuality,
+            marine = marine,
             fetchedAtMs = System.currentTimeMillis()
         )
     }
@@ -173,6 +175,21 @@ class WidgetBuilder {
                 val timezone = bundle.forecast.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
                 val nowLocal = LocalDateTime.now(timezone)
                 OutdoorFitnessRules.computeBestRunningHours(hourly, nowLocal)
+            }
+            "wave_height_card" -> {
+                val timezone = bundle.forecast.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
+                val nowLocal = LocalDateTime.now(timezone)
+                BeachgoerRules.computeWaveHeightCard(bundle.marine, nowLocal)
+            }
+            "sea_temp_card" -> {
+                val timezone = bundle.forecast.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
+                val nowLocal = LocalDateTime.now(timezone)
+                BeachgoerRules.computeSeaTempCard(bundle.marine, current, nowLocal)
+            }
+            "tide_card" -> {
+                val timezone = bundle.forecast.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
+                val nowLocal = LocalDateTime.now(timezone)
+                BeachgoerRules.computeTideCard(bundle.marine, nowLocal)
             }
             "school_commute_card" -> {
                 val (start, end) = try {

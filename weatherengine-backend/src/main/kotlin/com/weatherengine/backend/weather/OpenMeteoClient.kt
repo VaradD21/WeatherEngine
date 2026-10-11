@@ -80,9 +80,26 @@ data class OpenMeteoCurrentAirQuality(
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
+data class OpenMeteoMarineHourly(
+    val time: List<String> = emptyList(),
+    @JsonProperty("wave_height") val waveHeight: List<Double?> = emptyList(),
+    @JsonProperty("wave_period") val wavePeriod: List<Double?> = emptyList(),
+    @JsonProperty("wave_direction") val waveDirection: List<Double?> = emptyList(),
+    @JsonProperty("wind_wave_height") val windWaveHeight: List<Double?> = emptyList(),
+    @JsonProperty("swell_wave_height") val swellWaveHeight: List<Double?> = emptyList(),
+    @JsonProperty("sea_surface_temperature") val seaSurfaceTemperature: List<Double?> = emptyList()
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class OpenMeteoMarineResponse(
+    val hourly: OpenMeteoMarineHourly? = null
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class WeatherBundleDto(
     val forecast: OpenMeteoForecastResponse = OpenMeteoForecastResponse(),
     val airQuality: OpenMeteoAirQualityResponse? = null,
+    val marine: OpenMeteoMarineResponse? = null,
     val fetchedAtMs: Long = System.currentTimeMillis()
 )
 
@@ -102,7 +119,9 @@ class OpenMeteoClient(
     @Value("\${app.weather-providers.open-meteo.forecast-url:https://api.open-meteo.com/v1/forecast}")
     private val forecastBaseUrl: String,
     @Value("\${app.weather-providers.open-meteo.air-quality-url:https://air-quality-api.open-meteo.com/v1/air-quality}")
-    private val airQualityBaseUrl: String
+    private val airQualityBaseUrl: String,
+    @Value("\${app.weather-providers.open-meteo.marine-url:https://marine-api.open-meteo.com/v1/marine}")
+    private val marineBaseUrl: String = "https://marine-api.open-meteo.com/v1/marine"
 ) {
     private val logger = LoggerFactory.getLogger(OpenMeteoClient::class.java)
 
@@ -115,6 +134,8 @@ class OpenMeteoClient(
             "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,uv_index_max,sunrise,sunset"
         private const val AQI_CURRENT_PARAMS =
             "us_aqi,pm2_5,grass_pollen,birch_pollen,alder_pollen,ragweed_pollen"
+        private const val MARINE_HOURLY_PARAMS =
+            "wave_height,wave_period,wave_direction,wind_wave_height,swell_wave_height,sea_surface_temperature"
     }
 
     fun fetchForecast(lat: Double, lon: Double): OpenMeteoForecastResponse {
@@ -159,6 +180,27 @@ class OpenMeteoClient(
                 .body(OpenMeteoAirQualityResponse::class.java)
         } catch (ex: Exception) {
             logger.warn("Air quality provider call failed for ({}, {}): {}", lat, lon, ex.message)
+            null
+        }
+    }
+
+    fun fetchMarine(lat: Double, lon: Double): OpenMeteoMarineResponse? {
+        val uri = UriComponentsBuilder.fromHttpUrl(marineBaseUrl)
+            .queryParam("latitude", lat)
+            .queryParam("longitude", lon)
+            .queryParam("hourly", MARINE_HOURLY_PARAMS)
+            .queryParam("timezone", "auto")
+            .queryParam("forecast_days", 2)
+            .build()
+            .toUri()
+
+        return try {
+            restClient.get()
+                .uri(uri)
+                .retrieve()
+                .body(OpenMeteoMarineResponse::class.java)
+        } catch (ex: Exception) {
+            logger.warn("Marine weather provider call returned null/unsupported coordinates for ({}, {}): {}", lat, lon, ex.message)
             null
         }
     }
