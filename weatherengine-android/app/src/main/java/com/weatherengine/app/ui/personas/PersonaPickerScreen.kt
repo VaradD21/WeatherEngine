@@ -43,6 +43,7 @@ class PersonaPickerViewModel(
         PersonaOption("health_conscious", "Health-conscious", "AQI, UV index, and heat alerts tailored for health and respiratory safety."),
         PersonaOption("outdoor_fitness", "Outdoor Fitness", "Wind speed, storm/fog alerts, humidity, and UV for sports and workouts."),
         PersonaOption("commuter", "Commuter", "Road visibility, commute traffic updates, and sudden transit alerts."),
+        PersonaOption("beachgoer", "Beachgoer & Surfer", "Sea conditions, tide timings, wave height, and water temperature for coastal activities."),
         PersonaOption("parent", "Parent & Family", "School commute alerts, rain lookahead, and severe weather warnings for families.")
     )
 

@@ -9,129 +9,6 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 
-sealed class WidgetUi(open val type: String) {
-    data class Aqi(
-        override val type: String = "aqi_card",
-        val aqi: Int,
-        val category: String
-    ) : WidgetUi(type)
-
-    data class Humidity(
-        override val type: String = "humidity_card",
-        val humidityPercent: Int
-    ) : WidgetUi(type)
-
-    data class Uv(
-        override val type: String = "uv_index_card",
-        val status: String?,
-        val uvIndex: Double?,
-        val message: String?
-    ) : WidgetUi(type)
-
-    data class Pollen(
-        override val type: String = "pollen_card",
-        val pollenType: String = "Pollen",
-        val grainsCount: Int = 0,
-        val level: String = "Low",
-        val message: String
-    ) : WidgetUi(type)
-
-    data class SunriseSunset(
-        override val type: String = "sunrise_sunset_card",
-        val sunrise: String,
-        val sunset: String,
-        val daylightState: String = "Daylight",
-        val dayLength: String = "",
-        val timeUntil: String = "",
-        val message: String = ""
-    ) : WidgetUi(type)
-
-    data class BestRunning(
-        override val type: String = "best_running_hours_card",
-        val hasOptimalWindow: Boolean = false,
-        val window: String? = null,
-        val score: Int? = null,
-        val reasons: List<String> = emptyList(),
-        val message: String = ""
-    ) : WidgetUi(type)
-
-    data class Wind(
-        override val type: String = "wind_speed_card",
-        val speedKmh: Double = 0.0,
-        val speedMetersPerSecond: Double = 0.0,
-        val gustsKmh: Double = 0.0,
-        val category: String = "Moderate",
-        val message: String = ""
-    ) : WidgetUi(type)
-
-    data class HeatAlert(
-        override val type: String = "heat_alert_card",
-        val alertActive: Boolean,
-        val severity: String = "Normal",
-        val temperatureCelsius: Double,
-        val maxApparentCelsius: Double? = null,
-        val message: String
-    ) : WidgetUi(type)
-
-    data class Traffic(
-        override val type: String = "traffic_card",
-        val status: String,
-        val message: String
-    ) : WidgetUi(type)
-
-    data class Visibility(
-        override val type: String = "visibility_card",
-        val visibilityMeters: Int,
-        val category: String
-    ) : WidgetUi(type)
-
-    data class StormFog(
-        override val type: String = "storm_fog_alert_card",
-        val alertActive: Boolean,
-        val conditionCode: Int,
-        val message: String
-    ) : WidgetUi(type)
-
-    data class SchoolCommute(
-        override val type: String = "school_commute_card",
-        val run: String,
-        val date: String,
-        val window: String,
-        val verdict: String,
-        val reasons: List<String>,
-        val tips: List<String>
-    ) : WidgetUi(type)
-
-    data class RainAlert(
-        override val type: String = "rain_alert_card",
-        val message: String,
-        val peakProbabilityPercent: Int,
-        val peakHourLabel: String?
-    ) : WidgetUi(type)
-
-    data class SevereAlertItem(
-        val type: String,
-        val startsAt: String,
-        val message: String
-    )
-
-    data class SevereWeather(
-        override val type: String = "severe_weather_card",
-        val alerts: List<SevereAlertItem>,
-        val message: String
-    ) : WidgetUi(type)
-
-    data class StatusOnly(
-        override val type: String,
-        val status: String,
-        val message: String
-    ) : WidgetUi(type)
-
-    data class Unsupported(
-        override val type: String
-    ) : WidgetUi(type)
-}
-
 object WidgetMapper {
 
     fun mapWidget(type: String, dataElement: JsonElement?): WidgetUi {
@@ -140,7 +17,6 @@ object WidgetMapper {
         }
 
         return try {
-            // Check if widget returns a status-only state ("error", "unavailable")
             val status = dataElement["status"]?.jsonPrimitive?.contentOrNull
             if (status == "error" || status == "unavailable") {
                 val message = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: "Status: $status"
@@ -292,6 +168,57 @@ object WidgetMapper {
                         message = message
                     )
                 }
+                "wave_height_card" -> {
+                    val isCoastal = dataElement["isCoastal"]?.jsonPrimitive?.booleanOrNull ?: true
+                    val height = dataElement["waveHeightMeters"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                    val period = dataElement["wavePeriodSeconds"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                    val swell = dataElement["swellHeightMeters"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                    val category = dataElement["category"]?.jsonPrimitive?.contentOrNull ?: "Calm"
+                    val surfRating = dataElement["surfRating"]?.jsonPrimitive?.contentOrNull ?: "Flat"
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: "Wave height: $height m"
+                    WidgetUi.WaveHeight(
+                        type = type,
+                        isCoastal = isCoastal,
+                        waveHeightMeters = height,
+                        wavePeriodSeconds = period,
+                        swellHeightMeters = swell,
+                        category = category,
+                        surfRating = surfRating,
+                        message = msg
+                    )
+                }
+                "sea_temp_card" -> {
+                    val temp = dataElement["waterTempCelsius"]?.jsonPrimitive?.doubleOrNull ?: 24.0
+                    val isEstimated = dataElement["isEstimated"]?.jsonPrimitive?.booleanOrNull ?: false
+                    val comfort = dataElement["comfort"]?.jsonPrimitive?.contentOrNull ?: "Comfortable"
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: "Water temp: $temp°C"
+                    WidgetUi.SeaTemp(
+                        type = type,
+                        waterTempCelsius = temp,
+                        isEstimated = isEstimated,
+                        comfort = comfort,
+                        message = msg
+                    )
+                }
+                "tide_card" -> {
+                    val date = dataElement["date"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val nextTideState = dataElement["nextTideState"]?.jsonPrimitive?.contentOrNull ?: "High Tide"
+                    val nextTideTime = dataElement["nextTideTime"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val secondaryTideState = dataElement["secondaryTideState"]?.jsonPrimitive?.contentOrNull ?: "Low Tide"
+                    val secondaryTideTime = dataElement["secondaryTideTime"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val tideSummary = dataElement["tideSummary"]?.jsonPrimitive?.contentOrNull ?: "$nextTideState around $nextTideTime"
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: tideSummary
+                    WidgetUi.Tide(
+                        type = type,
+                        date = date,
+                        nextTideState = nextTideState,
+                        nextTideTime = nextTideTime,
+                        secondaryTideState = secondaryTideState,
+                        secondaryTideTime = secondaryTideTime,
+                        tideSummary = tideSummary,
+                        message = msg
+                    )
+                }
                 else -> {
                     WidgetUi.Unsupported(type = type)
                 }
@@ -305,4 +232,3 @@ object WidgetMapper {
         }
     }
 }
-
