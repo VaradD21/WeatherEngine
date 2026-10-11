@@ -245,6 +245,7 @@ fun HomeScreen(
                                                 "health_conscious" -> "Health"
                                                 "outdoor_fitness" -> "Fitness"
                                                 "commuter" -> "Commuter"
+                                                "beachgoer" -> "Beach & Surf"
                                                 "parent" -> "Parent & Family"
                                                 else -> code
                                             }
@@ -275,6 +276,9 @@ fun HomeScreen(
                                         is WidgetUi.BestRunning -> BestRunningHoursCard(running = widget)
                                         is WidgetUi.Wind -> WindSpeedCard(wind = widget)
                                         is WidgetUi.HeatAlert -> HeatAlertCard(heat = widget)
+                                        is WidgetUi.WaveHeight -> WaveHeightCard(wave = widget)
+                                        is WidgetUi.SeaTemp -> SeaTempCard(sea = widget)
+                                        is WidgetUi.Tide -> TideCard(tide = widget)
                                         is WidgetUi.StatusOnly -> StatusOnlyCard(widget = widget)
                                         else -> {}
                                     }
