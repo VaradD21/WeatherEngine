@@ -100,29 +100,15 @@ class WidgetBuilder {
                 }
             }
             "sunrise_sunset_card" -> {
-                val sunrise = daily?.sunrise?.firstOrNull()
-                val sunset = daily?.sunset?.firstOrNull()
-                if (!sunrise.isNullOrBlank() && !sunset.isNullOrBlank()) {
-                    mapOf("sunrise" to sunrise, "sunset" to sunset)
-                } else {
-                    mapOf("status" to "unavailable", "message" to "Sunrise and sunset times unavailable")
-                }
+                val timezone = bundle.forecast.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
+                val nowLocal = LocalDateTime.now(timezone)
+                OutdoorFitnessRules.computeSunriseSunsetCard(daily, nowLocal)
             }
             "wind_speed_card" -> {
-                val windKmh = current?.windSpeed10m ?: 0.0
-                val windMs = ((windKmh / 3.6) * 10.0).roundToInt() / 10.0
-                mapOf("speedMetersPerSecond" to windMs, "speedKmh" to windKmh)
+                OutdoorFitnessRules.computeWindSpeedCard(current)
             }
             "heat_alert_card" -> {
-                val temp = current?.apparentTemperature ?: current?.temperature2m ?: 25.0
-                val maxApparent = hourly?.apparentTemperature?.filterNotNull()?.take(24)?.maxOrNull() ?: temp
-                val alertActive = maxApparent >= 32.0
-                val msg = when {
-                    maxApparent >= 38.0 -> "Extreme heat warning (${maxApparent.roundToInt()}°C feels-like). Stay hydrated and avoid midday sun."
-                    maxApparent >= 32.0 -> "Heat caution (${maxApparent.roundToInt()}°C feels-like). Limit strenuous midday activity."
-                    else -> "No active heat alerts for your area"
-                }
-                mapOf("alertActive" to alertActive, "temperatureCelsius" to temp, "message" to msg)
+                OutdoorFitnessRules.computeHeatAlertCard(current, hourly)
             }
             "traffic_card" -> {
                 val precipProb = hourly?.precipitationProbability?.filterNotNull()?.take(6)?.maxOrNull() ?: 0
@@ -184,8 +170,9 @@ class WidgetBuilder {
                 }
             }
             "best_running_hours_card" -> {
-                val temp = current?.temperature2m?.roundToInt() ?: 24
-                mapOf("status" to "unavailable", "message" to "Optimal outdoor workout conditions (~${temp}°C)")
+                val timezone = bundle.forecast.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
+                val nowLocal = LocalDateTime.now(timezone)
+                OutdoorFitnessRules.computeBestRunningHours(hourly, nowLocal)
             }
             "school_commute_card" -> {
                 val (start, end) = try {
