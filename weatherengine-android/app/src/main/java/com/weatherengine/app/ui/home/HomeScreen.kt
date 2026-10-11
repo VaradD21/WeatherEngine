@@ -271,6 +271,10 @@ fun HomeScreen(
                                         is WidgetUi.SevereWeather -> SevereWeatherCard(severe = widget)
                                         is WidgetUi.Pollen -> PollenCard(pollen = widget)
                                         is WidgetUi.Aqi -> AqiCard(aqi = widget)
+                                        is WidgetUi.SunriseSunset -> SunriseSunsetCard(sun = widget)
+                                        is WidgetUi.BestRunning -> BestRunningHoursCard(running = widget)
+                                        is WidgetUi.Wind -> WindSpeedCard(wind = widget)
+                                        is WidgetUi.HeatAlert -> HeatAlertCard(heat = widget)
                                         is WidgetUi.StatusOnly -> StatusOnlyCard(widget = widget)
                                         else -> {}
                                     }

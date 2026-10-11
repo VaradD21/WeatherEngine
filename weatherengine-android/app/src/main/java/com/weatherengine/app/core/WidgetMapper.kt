@@ -39,18 +39,37 @@ sealed class WidgetUi(open val type: String) {
     data class SunriseSunset(
         override val type: String = "sunrise_sunset_card",
         val sunrise: String,
-        val sunset: String
+        val sunset: String,
+        val daylightState: String = "Daylight",
+        val dayLength: String = "",
+        val timeUntil: String = "",
+        val message: String = ""
+    ) : WidgetUi(type)
+
+    data class BestRunning(
+        override val type: String = "best_running_hours_card",
+        val hasOptimalWindow: Boolean = false,
+        val window: String? = null,
+        val score: Int? = null,
+        val reasons: List<String> = emptyList(),
+        val message: String = ""
     ) : WidgetUi(type)
 
     data class Wind(
         override val type: String = "wind_speed_card",
-        val speedMetersPerSecond: Double
+        val speedKmh: Double = 0.0,
+        val speedMetersPerSecond: Double = 0.0,
+        val gustsKmh: Double = 0.0,
+        val category: String = "Moderate",
+        val message: String = ""
     ) : WidgetUi(type)
 
     data class HeatAlert(
         override val type: String = "heat_alert_card",
         val alertActive: Boolean,
+        val severity: String = "Normal",
         val temperatureCelsius: Double,
+        val maxApparentCelsius: Double? = null,
         val message: String
     ) : WidgetUi(type)
 
@@ -154,17 +173,64 @@ object WidgetMapper {
                 "sunrise_sunset_card" -> {
                     val sunrise = dataElement["sunrise"]?.jsonPrimitive?.contentOrNull ?: error("Missing sunrise")
                     val sunset = dataElement["sunset"]?.jsonPrimitive?.contentOrNull ?: error("Missing sunset")
-                    WidgetUi.SunriseSunset(type = type, sunrise = sunrise, sunset = sunset)
+                    val daylightState = dataElement["daylightState"]?.jsonPrimitive?.contentOrNull ?: "Daylight"
+                    val dayLength = dataElement["dayLength"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val timeUntil = dataElement["timeUntil"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val message = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: "Sunrise: $sunrise • Sunset: $sunset"
+                    WidgetUi.SunriseSunset(
+                        type = type,
+                        sunrise = sunrise,
+                        sunset = sunset,
+                        daylightState = daylightState,
+                        dayLength = dayLength,
+                        timeUntil = timeUntil,
+                        message = message
+                    )
+                }
+                "best_running_hours_card" -> {
+                    val hasWindow = dataElement["hasOptimalWindow"]?.jsonPrimitive?.booleanOrNull ?: false
+                    val window = dataElement["window"]?.jsonPrimitive?.contentOrNull
+                    val score = dataElement["score"]?.jsonPrimitive?.intOrNull
+                    val reasons = dataElement["reasons"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+                    val message = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: "Running conditions calculated"
+                    WidgetUi.BestRunning(
+                        type = type,
+                        hasOptimalWindow = hasWindow,
+                        window = window,
+                        score = score,
+                        reasons = reasons,
+                        message = message
+                    )
                 }
                 "wind_speed_card" -> {
-                    val speed = dataElement["speedMetersPerSecond"]?.jsonPrimitive?.doubleOrNull ?: error("Missing speedMetersPerSecond")
-                    WidgetUi.Wind(type = type, speedMetersPerSecond = speed)
+                    val speedMs = dataElement["speedMetersPerSecond"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                    val speedKmh = dataElement["speedKmh"]?.jsonPrimitive?.doubleOrNull ?: (speedMs * 3.6)
+                    val gusts = dataElement["gustsKmh"]?.jsonPrimitive?.doubleOrNull ?: speedKmh
+                    val category = dataElement["category"]?.jsonPrimitive?.contentOrNull ?: "Moderate"
+                    val message = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: "$speedKmh km/h wind"
+                    WidgetUi.Wind(
+                        type = type,
+                        speedKmh = speedKmh,
+                        speedMetersPerSecond = speedMs,
+                        gustsKmh = gusts,
+                        category = category,
+                        message = message
+                    )
                 }
                 "heat_alert_card" -> {
-                    val active = dataElement["alertActive"]?.jsonPrimitive?.booleanOrNull ?: error("Missing alertActive")
-                    val temp = dataElement["temperatureCelsius"]?.jsonPrimitive?.doubleOrNull ?: error("Missing temperatureCelsius")
-                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: error("Missing message")
-                    WidgetUi.HeatAlert(type = type, alertActive = active, temperatureCelsius = temp, message = msg)
+                    val active = dataElement["alertActive"]?.jsonPrimitive?.booleanOrNull ?: false
+                    val severity = dataElement["severity"]?.jsonPrimitive?.contentOrNull ?: if (active) "Caution" else "Normal"
+                    val temp = dataElement["temperatureCelsius"]?.jsonPrimitive?.doubleOrNull ?: 25.0
+                    val maxApparent = dataElement["maxApparentCelsius"]?.jsonPrimitive?.doubleOrNull
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: "No heat risk"
+                    WidgetUi.HeatAlert(
+                        type = type,
+                        alertActive = active,
+                        severity = severity,
+                        temperatureCelsius = temp,
+                        maxApparentCelsius = maxApparent,
+                        message = msg
+                    )
                 }
                 "traffic_card" -> {
                     val tStatus = dataElement["status"]?.jsonPrimitive?.contentOrNull ?: error("Missing status")

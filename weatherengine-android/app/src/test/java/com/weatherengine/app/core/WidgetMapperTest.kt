@@ -177,4 +177,31 @@ class WidgetMapperTest {
         assertEquals("High", pollen.level)
         assertEquals("Birch pollen is High (65 grains/m³)", pollen.message)
     }
+
+    @Test
+    fun testOutdoorFitnessWidgetsMapping() {
+        val sunJson = """{"status":"ok","sunrise":"06:15 AM","sunset":"06:30 PM","daylightState":"Daylight","message":"Sun is up"}"""
+        val sunResult = WidgetMapper.mapWidget("sunrise_sunset_card", json.parseToJsonElement(sunJson))
+        assertTrue(sunResult is WidgetUi.SunriseSunset)
+        assertEquals("06:15 AM", (sunResult as WidgetUi.SunriseSunset).sunrise)
+
+        val runJson = """{"status":"ok","hasOptimalWindow":true,"window":"6 AM – 8 AM","score":85,"reasons":["Dry conditions"]}"""
+        val runResult = WidgetMapper.mapWidget("best_running_hours_card", json.parseToJsonElement(runJson))
+        assertTrue(runResult is WidgetUi.BestRunning)
+        val run = runResult as WidgetUi.BestRunning
+        assertTrue(run.hasOptimalWindow)
+        assertEquals(85, run.score)
+
+        val windJson = """{"status":"ok","speedKmh":15.0,"speedMetersPerSecond":4.2,"category":"Light Breeze","message":"Gentle breeze"}"""
+        val windResult = WidgetMapper.mapWidget("wind_speed_card", json.parseToJsonElement(windJson))
+        assertTrue(windResult is WidgetUi.Wind)
+        assertEquals(15.0, (windResult as WidgetUi.Wind).speedKmh, 0.01)
+
+        val heatJson = """{"status":"ok","alertActive":true,"severity":"Caution","temperatureCelsius":33.0,"message":"Heat caution"}"""
+        val heatResult = WidgetMapper.mapWidget("heat_alert_card", json.parseToJsonElement(heatJson))
+        assertTrue(heatResult is WidgetUi.HeatAlert)
+        val heat = heatResult as WidgetUi.HeatAlert
+        assertTrue(heat.alertActive)
+        assertEquals("Caution", heat.severity)
+    }
 }
