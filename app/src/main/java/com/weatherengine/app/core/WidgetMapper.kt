@@ -219,6 +219,61 @@ object WidgetMapper {
                         message = msg
                     )
                 }
+                "saved_destinations_card" -> {
+                    val destArray = dataElement["destinations"]?.jsonArray
+                    val items = destArray?.mapNotNull { el ->
+                        if (el is JsonObject) {
+                            val id = el["id"]?.jsonPrimitive?.contentOrNull ?: ""
+                            val name = el["name"]?.jsonPrimitive?.contentOrNull ?: ""
+                            val country = el["country"]?.jsonPrimitive?.contentOrNull ?: ""
+                            val lat = el["lat"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                            val lon = el["lon"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                            val temp = el["tempCelsius"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                            val condition = el["condition"]?.jsonPrimitive?.contentOrNull ?: "Clear"
+                            val code = el["weatherCode"]?.jsonPrimitive?.intOrNull ?: 0
+                            val tip = el["packingTip"]?.jsonPrimitive?.contentOrNull ?: ""
+                            WidgetUi.DestinationItem(id, name, country, lat, lon, temp, condition, code, tip)
+                        } else null
+                    } ?: emptyList()
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: "Saved destinations"
+                    WidgetUi.SavedDestinations(type = type, destinations = items, message = msg)
+                }
+                "flight_alert_card" -> {
+                    val hasRisk = dataElement["hasDisruptionRisk"]?.jsonPrimitive?.booleanOrNull ?: false
+                    val severity = dataElement["severity"]?.jsonPrimitive?.contentOrNull ?: "Normal"
+                    val flightStatus = dataElement["flightStatus"]?.jsonPrimitive?.contentOrNull ?: "On Schedule"
+                    val reasons = dataElement["reasons"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: "No flight disruptions reported"
+                    WidgetUi.FlightAlert(
+                        type = type,
+                        hasDisruptionRisk = hasRisk,
+                        severity = severity,
+                        flightStatus = flightStatus,
+                        reasons = reasons,
+                        message = msg
+                    )
+                }
+                "packing_suggestion_card" -> {
+                    val dest = dataElement["destination"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val headline = dataElement["headline"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val items = dataElement["items"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+                    val tips = dataElement["tips"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+                    val tempRange = dataElement["tempRange"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val rainChance = dataElement["rainChancePercent"]?.jsonPrimitive?.intOrNull ?: 0
+                    val uvMax = dataElement["uvIndexMax"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: headline
+                    WidgetUi.PackingSuggestion(
+                        type = type,
+                        destination = dest,
+                        headline = headline,
+                        items = items,
+                        tips = tips,
+                        tempRange = tempRange,
+                        rainChancePercent = rainChance,
+                        uvIndexMax = uvMax,
+                        message = msg
+                    )
+                }
                 else -> {
                     WidgetUi.Unsupported(type = type)
                 }
