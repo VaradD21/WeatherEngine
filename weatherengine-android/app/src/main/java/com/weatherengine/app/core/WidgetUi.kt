@@ -142,6 +142,45 @@ sealed class WidgetUi(open val type: String) {
         val message: String = ""
     ) : WidgetUi(type)
 
+    data class DestinationItem(
+        val id: String,
+        val name: String,
+        val country: String,
+        val lat: Double,
+        val lon: Double,
+        val tempCelsius: Double,
+        val condition: String,
+        val weatherCode: Int,
+        val packingTip: String
+    )
+
+    data class SavedDestinations(
+        override val type: String = "saved_destinations_card",
+        val destinations: List<DestinationItem> = emptyList(),
+        val message: String = ""
+    ) : WidgetUi(type)
+
+    data class FlightAlert(
+        override val type: String = "flight_alert_card",
+        val hasDisruptionRisk: Boolean = false,
+        val severity: String = "Normal",
+        val flightStatus: String = "On Schedule",
+        val reasons: List<String> = emptyList(),
+        val message: String = ""
+    ) : WidgetUi(type)
+
+    data class PackingSuggestion(
+        override val type: String = "packing_suggestion_card",
+        val destination: String = "",
+        val headline: String = "",
+        val items: List<String> = emptyList(),
+        val tips: List<String> = emptyList(),
+        val tempRange: String = "",
+        val rainChancePercent: Int = 0,
+        val uvIndexMax: Double = 0.0,
+        val message: String = ""
+    ) : WidgetUi(type)
+
     data class StatusOnly(
         override val type: String,
         val status: String,
