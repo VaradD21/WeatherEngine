@@ -212,6 +212,19 @@ class WidgetBuilder {
                 val nowLocal = LocalDateTime.now(timezone)
                 ParentPersonaRules.computeSevereWeatherCard(hourly, nowLocal)
             }
+            "saved_destinations_card" -> {
+                val lat = bundle.forecast.latitude ?: 0.0
+                val lon = bundle.forecast.longitude ?: 0.0
+                TravelerRules.computeSavedDestinationsCard(lat, lon)
+            }
+            "flight_alert_card" -> {
+                val timezone = bundle.forecast.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
+                val nowLocal = LocalDateTime.now(timezone)
+                TravelerRules.computeFlightAlertCard(current, hourly, nowLocal)
+            }
+            "packing_suggestion_card" -> {
+                TravelerRules.computePackingSuggestionCard(current, daily, hourly)
+            }
             else -> mapOf("status" to "unavailable", "message" to "Widget $widgetCode is ready")
         }
 
