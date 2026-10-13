@@ -59,6 +59,7 @@ lint-results*
 **/.gemini/
 .antigravity/
 **/.antigravity/
+!.antigravity/rules.md
 captures/
 **/captures/
 .externalNativeBuild/

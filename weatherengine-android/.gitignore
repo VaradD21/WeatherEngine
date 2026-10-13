@@ -23,6 +23,9 @@ output-metadata.json
 /local.properties
 local.properties
 **/local.properties
+app-config.properties
+**/app-config.properties
+!**/app-config.properties.example
 .env
 *.env
 .env.*
@@ -46,6 +49,7 @@ firebase-service-account.json
 .claude/
 .cursor/
 .gemini/
+.antigravity/
 /captures/
 captures/
 .externalNativeBuild/

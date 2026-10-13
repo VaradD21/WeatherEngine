@@ -45,7 +45,9 @@ class PersonaPickerViewModel(
         PersonaOption("commuter", "Commuter", "Road visibility, commute traffic updates, and sudden transit alerts."),
         PersonaOption("beachgoer", "Beachgoer & Surfer", "Sea conditions, tide timings, wave height, and water temperature for coastal activities."),
         PersonaOption("traveler", "Traveler", "Saved destinations quick access, flight severe weather alerts, and smart packing tips."),
-        PersonaOption("parent", "Parent & Family", "School commute alerts, rain lookahead, and severe weather warnings for families.")
+        PersonaOption("parent", "Parent & Family", "School commute alerts, rain lookahead, and severe weather warnings for families."),
+        PersonaOption("gardener", "Agriculture & Gardener", "Soil moisture, rainfall predictions, frost alerts, and seasonal planting guidance."),
+        PersonaOption("event_planner", "Event Planner", "Extended forecasts, rain probability for event hours, and outdoor comfort index.")
     )
 
     private val _uiState = MutableStateFlow(PersonaPickerUiState())

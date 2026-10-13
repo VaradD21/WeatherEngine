@@ -190,4 +190,82 @@ sealed class WidgetUi(open val type: String) {
     data class Unsupported(
         override val type: String
     ) : WidgetUi(type)
+
+    // ── Gardener ──────────────────────────────────────────────────────────────
+    data class SoilMoisture(
+        override val type: String = "soil_moisture_card",
+        val level: String = "Normal",
+        val precip7dMm: Double = 0.0,
+        val humidityPercent: Int = 50,
+        val advice: String = "",
+        val message: String = ""
+    ) : WidgetUi(type)
+
+    data class RainfallPrediction(
+        override val type: String = "rainfall_prediction_card",
+        val totalMm: Double = 0.0,
+        val maxProbabilityPercent: Int = 0,
+        val rainyDayCount: Int = 0,
+        val forecastDays: Int = 7,
+        val outlook: String = "",
+        val message: String = ""
+    ) : WidgetUi(type)
+
+    data class FrostAlert(
+        override val type: String = "frost_alert_card",
+        val alertActive: Boolean = false,
+        val alertLevel: String = "Clear",
+        val frostRiskDayCount: Int = 0,
+        val hardFrostDayCount: Int = 0,
+        val advice: String = "",
+        val message: String = ""
+    ) : WidgetUi(type)
+
+    data class PlantingGuidance(
+        override val type: String = "planting_guidance_card",
+        val hasFrostRisk: Boolean = false,
+        val avgMaxTempC: Double = 22.0,
+        val avgMinTempC: Double = 12.0,
+        val totalRainMm7d: Double = 0.0,
+        val guidance: String = "",
+        val message: String = ""
+    ) : WidgetUi(type)
+
+    // ── Event Planner ─────────────────────────────────────────────────────────
+    data class DayForecastItem(
+        val date: String,
+        val condition: String,
+        val maxTempC: Double,
+        val minTempC: Double,
+        val precipProbPercent: Int
+    )
+
+    data class ExtendedForecast(
+        override val type: String = "extended_forecast_card",
+        val days: List<DayForecastItem> = emptyList(),
+        val forecastDayCount: Int = 0,
+        val message: String = ""
+    ) : WidgetUi(type)
+
+    data class RainProbability(
+        override val type: String = "rain_probability_card",
+        val peakEventHourProbPercent: Int = 0,
+        val avgEventHourProbPercent: Int = 0,
+        val daily3MaxProbPercent: Int = 0,
+        val outlook: String = "",
+        val message: String = ""
+    ) : WidgetUi(type)
+
+    data class ComfortIndex(
+        override val type: String = "comfort_index_card",
+        val comfortIndex: Int = 0,
+        val rating: String = "Fair",
+        val tempCelsius: Double = 22.0,
+        val apparentTempCelsius: Double = 22.0,
+        val humidityPercent: Int = 50,
+        val uvIndex: Double = 3.0,
+        val advice: String = "",
+        val message: String = ""
+    ) : WidgetUi(type)
 }
+
