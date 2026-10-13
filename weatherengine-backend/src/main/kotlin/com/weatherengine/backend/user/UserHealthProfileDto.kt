@@ -8,6 +8,9 @@ data class HealthProfileDto(
     val hasAsthma: Boolean = false,
     val hasAllergies: Boolean = false,
     val hasSkinSensitivity: Boolean = false,
+    val hasMigraines: Boolean = false,
+    val hasJointPain: Boolean = false,
+    val hasHeatSensitivity: Boolean = false,
     @field:Min(20) @field:Max(500)
     val aqiThreshold: Int = 100,
     @field:Min(1) @field:Max(15)
