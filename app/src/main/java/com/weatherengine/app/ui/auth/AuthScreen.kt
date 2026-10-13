@@ -133,7 +133,7 @@ fun AuthScreen(
             Text("WeatherEngine", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.height(4.dp))
             Text(
-                text = if (state.isSignUp) "Create your account" else "Sign in to your weather dashboard",
+                text = if (state.isSignUp) "Step 1 of 2: Enter your basic account details" else "Sign in to your weather dashboard",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -149,19 +149,9 @@ fun AuthScreen(
                 OutlinedTextField(
                     value = state.username,
                     onValueChange = viewModel::onUsernameChanged,
-                    label = { Text("Username / Full name") },
+                    label = { Text("Full Name") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = state.phoneNumber,
-                    onValueChange = viewModel::onPhoneNumberChanged,
-                    label = { Text("Phone number (optional for SMS)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                 )
                 Spacer(Modifier.height(8.dp))
             }
@@ -195,6 +185,18 @@ fun AuthScreen(
                 }
             )
 
+            if (state.isSignUp) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = state.phoneNumber,
+                    onValueChange = viewModel::onPhoneNumberChanged,
+                    label = { Text("Phone number (optional for SMS alerts)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                )
+            }
+
             state.generalError?.let {
                 Spacer(Modifier.height(8.dp))
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
@@ -213,7 +215,7 @@ fun AuthScreen(
                 if (state.isLoading) {
                     CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                 } else {
-                    Text(if (state.isSignUp) "Sign Up" else "Log In", fontWeight = FontWeight.Bold)
+                    Text(if (state.isSignUp) "Create Account & Continue" else "Log In", fontWeight = FontWeight.Bold)
                 }
             }
             Spacer(Modifier.height(12.dp))

@@ -274,6 +274,89 @@ object WidgetMapper {
                         message = msg
                     )
                 }
+                // ── Gardener ──────────────────────────────────────────────────
+                "soil_moisture_card" -> {
+                    val level = dataElement["level"]?.jsonPrimitive?.contentOrNull ?: "Normal"
+                    val precip = dataElement["precip7dMm"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                    val humidity = dataElement["humidityPercent"]?.jsonPrimitive?.intOrNull ?: 50
+                    val advice = dataElement["advice"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: advice
+                    WidgetUi.SoilMoisture(type = type, level = level, precip7dMm = precip,
+                        humidityPercent = humidity, advice = advice, message = msg)
+                }
+                "rainfall_prediction_card" -> {
+                    val totalMm = dataElement["totalMm"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                    val maxProb = dataElement["maxProbabilityPercent"]?.jsonPrimitive?.intOrNull ?: 0
+                    val rainyDays = dataElement["rainyDayCount"]?.jsonPrimitive?.intOrNull ?: 0
+                    val forecastDays = dataElement["forecastDays"]?.jsonPrimitive?.intOrNull ?: 7
+                    val outlook = dataElement["outlook"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: outlook
+                    WidgetUi.RainfallPrediction(type = type, totalMm = totalMm,
+                        maxProbabilityPercent = maxProb, rainyDayCount = rainyDays,
+                        forecastDays = forecastDays, outlook = outlook, message = msg)
+                }
+                "frost_alert_card" -> {
+                    val active = dataElement["alertActive"]?.jsonPrimitive?.booleanOrNull ?: false
+                    val alertLevel = dataElement["alertLevel"]?.jsonPrimitive?.contentOrNull ?: "Clear"
+                    val frostDays = dataElement["frostRiskDayCount"]?.jsonPrimitive?.intOrNull ?: 0
+                    val hardFrostDays = dataElement["hardFrostDayCount"]?.jsonPrimitive?.intOrNull ?: 0
+                    val advice = dataElement["advice"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: advice
+                    WidgetUi.FrostAlert(type = type, alertActive = active, alertLevel = alertLevel,
+                        frostRiskDayCount = frostDays, hardFrostDayCount = hardFrostDays,
+                        advice = advice, message = msg)
+                }
+                "planting_guidance_card" -> {
+                    val hasFrost = dataElement["hasFrostRisk"]?.jsonPrimitive?.booleanOrNull ?: false
+                    val avgMax = dataElement["avgMaxTempC"]?.jsonPrimitive?.doubleOrNull ?: 22.0
+                    val avgMin = dataElement["avgMinTempC"]?.jsonPrimitive?.doubleOrNull ?: 12.0
+                    val totalRain = dataElement["totalRainMm7d"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                    val guidance = dataElement["guidance"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: guidance
+                    WidgetUi.PlantingGuidance(type = type, hasFrostRisk = hasFrost,
+                        avgMaxTempC = avgMax, avgMinTempC = avgMin, totalRainMm7d = totalRain,
+                        guidance = guidance, message = msg)
+                }
+                // ── Event Planner ─────────────────────────────────────────────
+                "extended_forecast_card" -> {
+                    val daysArray = dataElement["days"]?.jsonArray
+                    val dayItems = daysArray?.mapNotNull { el ->
+                        if (el is JsonObject) {
+                            val date = el["date"]?.jsonPrimitive?.contentOrNull ?: ""
+                            val condition = el["condition"]?.jsonPrimitive?.contentOrNull ?: "Variable"
+                            val maxT = el["maxTempC"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                            val minT = el["minTempC"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                            val prob = el["precipProbPercent"]?.jsonPrimitive?.intOrNull ?: 0
+                            WidgetUi.DayForecastItem(date, condition, maxT, minT, prob)
+                        } else null
+                    } ?: emptyList()
+                    val count = dataElement["forecastDayCount"]?.jsonPrimitive?.intOrNull ?: dayItems.size
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: "${count}-day forecast"
+                    WidgetUi.ExtendedForecast(type = type, days = dayItems, forecastDayCount = count, message = msg)
+                }
+                "rain_probability_card" -> {
+                    val peak = dataElement["peakEventHourProbPercent"]?.jsonPrimitive?.intOrNull ?: 0
+                    val avg = dataElement["avgEventHourProbPercent"]?.jsonPrimitive?.intOrNull ?: 0
+                    val daily3 = dataElement["daily3MaxProbPercent"]?.jsonPrimitive?.intOrNull ?: 0
+                    val outlook = dataElement["outlook"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: outlook
+                    WidgetUi.RainProbability(type = type, peakEventHourProbPercent = peak,
+                        avgEventHourProbPercent = avg, daily3MaxProbPercent = daily3,
+                        outlook = outlook, message = msg)
+                }
+                "comfort_index_card" -> {
+                    val score = dataElement["comfortIndex"]?.jsonPrimitive?.intOrNull ?: 0
+                    val rating = dataElement["rating"]?.jsonPrimitive?.contentOrNull ?: "Fair"
+                    val temp = dataElement["tempCelsius"]?.jsonPrimitive?.doubleOrNull ?: 22.0
+                    val apparent = dataElement["apparentTempCelsius"]?.jsonPrimitive?.doubleOrNull ?: temp
+                    val humidity = dataElement["humidityPercent"]?.jsonPrimitive?.intOrNull ?: 50
+                    val uv = dataElement["uvIndex"]?.jsonPrimitive?.doubleOrNull ?: 3.0
+                    val advice = dataElement["advice"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val msg = dataElement["message"]?.jsonPrimitive?.contentOrNull ?: advice
+                    WidgetUi.ComfortIndex(type = type, comfortIndex = score, rating = rating,
+                        tempCelsius = temp, apparentTempCelsius = apparent, humidityPercent = humidity,
+                        uvIndex = uv, advice = advice, message = msg)
+                }
                 else -> {
                     WidgetUi.Unsupported(type = type)
                 }

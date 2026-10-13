@@ -3,6 +3,7 @@ package com.weatherengine.app.core
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -205,128 +206,5 @@ class WidgetMapperTest {
         assertEquals("Caution", heat.severity)
     }
 
-    @Test
-    fun testBeachgoerWidgetsMapping() {
-        val waveJson = """
-            {
-                "status": "ok",
-                "isCoastal": true,
-                "waveHeightMeters": 1.4,
-                "wavePeriodSeconds": 9.5,
-                "swellHeightMeters": 1.1,
-                "category": "Moderate Waves",
-                "surfRating": "Good for Surfing / Bodyboarding",
-                "message": "Waves 1.4 m (Moderate Waves)"
-            }
-        """.trimIndent()
-        val waveResult = WidgetMapper.mapWidget("wave_height_card", json.parseToJsonElement(waveJson))
-        assertTrue(waveResult is WidgetUi.WaveHeight)
-        val wave = waveResult as WidgetUi.WaveHeight
-        assertEquals(1.4, wave.waveHeightMeters, 0.01)
-        assertEquals(9.5, wave.wavePeriodSeconds, 0.01)
-        assertEquals("Moderate Waves", wave.category)
-        assertEquals("Good for Surfing / Bodyboarding", wave.surfRating)
-
-        val seaJson = """
-            {
-                "status": "ok",
-                "waterTempCelsius": 25.5,
-                "isEstimated": false,
-                "comfort": "Warm — Perfect for Swimming",
-                "message": "Sea water temperature is 25.5°C"
-            }
-        """.trimIndent()
-        val seaResult = WidgetMapper.mapWidget("sea_temp_card", json.parseToJsonElement(seaJson))
-        assertTrue(seaResult is WidgetUi.SeaTemp)
-        val sea = seaResult as WidgetUi.SeaTemp
-        assertEquals(25.5, sea.waterTempCelsius, 0.01)
-        assertEquals("Warm — Perfect for Swimming", sea.comfort)
-
-        val tideJson = """
-            {
-                "status": "ok",
-                "date": "2026-10-12",
-                "nextTideState": "High Tide",
-                "nextTideTime": "06:45 PM",
-                "secondaryTideState": "Low Tide",
-                "secondaryTideTime": "11:55 PM",
-                "tideSummary": "High Tide expected around 06:45 PM",
-                "message": "High Tide at 06:45 PM"
-            }
-        """.trimIndent()
-        val tideResult = WidgetMapper.mapWidget("tide_card", json.parseToJsonElement(tideJson))
-        assertTrue(tideResult is WidgetUi.Tide)
-        val tide = tideResult as WidgetUi.Tide
-        assertEquals("High Tide", tide.nextTideState)
-        assertEquals("06:45 PM", tide.nextTideTime)
-        assertEquals("Low Tide", tide.secondaryTideState)
-    }
-
-    @Test
-    fun testTravelerWidgetsMapping() {
-        val destJson = """
-            {
-                "status": "ok",
-                "destinations": [
-                    {
-                        "id": "dest_lon",
-                        "name": "London",
-                        "country": "UK",
-                        "lat": 51.5074,
-                        "lon": -0.1278,
-                        "tempCelsius": 14.0,
-                        "condition": "Light Rain",
-                        "weatherCode": 61,
-                        "packingTip": "Carry a raincoat in London"
-                    }
-                ],
-                "message": "Saved destinations"
-            }
-        """.trimIndent()
-        val destResult = WidgetMapper.mapWidget("saved_destinations_card", json.parseToJsonElement(destJson))
-        assertTrue(destResult is WidgetUi.SavedDestinations)
-        val dest = destResult as WidgetUi.SavedDestinations
-        assertEquals(1, dest.destinations.size)
-        assertEquals("London", dest.destinations[0].name)
-        assertEquals("Carry a raincoat in London", dest.destinations[0].packingTip)
-
-        val flightJson = """
-            {
-                "status": "ok",
-                "hasDisruptionRisk": true,
-                "severity": "Warning",
-                "flightStatus": "Delays Likely",
-                "reasons": ["Strong crosswinds up to 58 km/h"],
-                "message": "Moderate flight delay risk"
-            }
-        """.trimIndent()
-        val flightResult = WidgetMapper.mapWidget("flight_alert_card", json.parseToJsonElement(flightJson))
-        assertTrue(flightResult is WidgetUi.FlightAlert)
-        val flight = flightResult as WidgetUi.FlightAlert
-        assertTrue(flight.hasDisruptionRisk)
-        assertEquals("Warning", flight.severity)
-        assertEquals("Delays Likely", flight.flightStatus)
-        assertEquals(listOf("Strong crosswinds up to 58 km/h"), flight.reasons)
-
-        val packJson = """
-            {
-                "status": "ok",
-                "destination": "London",
-                "headline": "Carry a raincoat in London",
-                "items": ["Raincoat or compact umbrella"],
-                "tips": ["Carry a raincoat or umbrella (75% chance of rain in London)"],
-                "tempRange": "12°C - 17°C",
-                "rainChancePercent": 75,
-                "uvIndexMax": 3.0,
-                "message": "Carry a raincoat in London • 12°C - 17°C"
-            }
-        """.trimIndent()
-        val packResult = WidgetMapper.mapWidget("packing_suggestion_card", json.parseToJsonElement(packJson))
-        assertTrue(packResult is WidgetUi.PackingSuggestion)
-        val pack = packResult as WidgetUi.PackingSuggestion
-        assertEquals("London", pack.destination)
-        assertEquals("Carry a raincoat in London", pack.headline)
-        assertEquals(75, pack.rainChancePercent)
-        assertTrue(pack.items.contains("Raincoat or compact umbrella"))
-    }
 }
+

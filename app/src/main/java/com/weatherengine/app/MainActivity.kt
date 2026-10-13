@@ -99,7 +99,7 @@ fun WeatherEngineAppNav(app: ComponentActivity) {
         }
         composable(Screen.HealthProfile.route) {
             val vm: HealthProfileViewModel = viewModel(factory = vmFactory {
-                HealthProfileViewModel(container.repository)
+                HealthProfileViewModel(container.repository, container.settingsStore)
             })
             HealthProfileScreen(
                 viewModel = vm,

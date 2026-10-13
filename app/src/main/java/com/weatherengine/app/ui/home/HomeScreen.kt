@@ -248,6 +248,8 @@ fun HomeScreen(
                                                 "beachgoer" -> "Beach & Surf"
                                                 "traveler" -> "Traveler"
                                                 "parent" -> "Parent & Family"
+                                                "gardener" -> "Gardener"
+                                                "event_planner" -> "Event Planner"
                                                 else -> code
                                             }
                                         }
@@ -283,6 +285,15 @@ fun HomeScreen(
                                         is WidgetUi.SavedDestinations -> SavedDestinationsCard(saved = widget)
                                         is WidgetUi.FlightAlert -> FlightAlertCard(flight = widget)
                                         is WidgetUi.PackingSuggestion -> PackingSuggestionCard(packing = widget)
+                                        // Gardener
+                                        is WidgetUi.SoilMoisture -> SoilMoistureCard(soil = widget)
+                                        is WidgetUi.RainfallPrediction -> RainfallPredictionCard(rainfall = widget)
+                                        is WidgetUi.FrostAlert -> FrostAlertCard(frost = widget)
+                                        is WidgetUi.PlantingGuidance -> PlantingGuidanceCard(planting = widget)
+                                        // Event Planner
+                                        is WidgetUi.ExtendedForecast -> ExtendedForecastCard(forecast = widget)
+                                        is WidgetUi.RainProbability -> RainProbabilityCard(rain = widget)
+                                        is WidgetUi.ComfortIndex -> ComfortIndexCard(comfort = widget)
                                         is WidgetUi.StatusOnly -> StatusOnlyCard(widget = widget)
                                         else -> {}
                                     }
