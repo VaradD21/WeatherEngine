@@ -42,6 +42,9 @@ class UserHealthProfileTest {
             hasAsthma = true,
             hasAllergies = true,
             hasSkinSensitivity = true,
+            hasMigraines = true,
+            hasJointPain = true,
+            hasHeatSensitivity = true,
             aqiThreshold = 80,
             uvThreshold = 5,
             humidityThreshold = 65,
@@ -53,6 +56,9 @@ class UserHealthProfileTest {
 
         assertNotNull(response.body)
         assertTrue(response.body!!.hasAsthma)
+        assertTrue(response.body!!.hasMigraines)
+        assertTrue(response.body!!.hasJointPain)
+        assertTrue(response.body!!.hasHeatSensitivity)
         assertEquals(80, response.body!!.aqiThreshold)
         assertEquals(5, response.body!!.uvThreshold)
         assertEquals(65, response.body!!.humidityThreshold)

@@ -1,4 +1,6 @@
-# Environment & Secrets
+app-config.properties
+**/app-config.properties
+!**/app-config.properties.example
 .env
 *.env
 .env.*
@@ -42,6 +44,7 @@ test-results/
 .claude/
 .cursor/
 .gemini/
+.antigravity/
 local.properties
 
 # OS, Databases & Logs

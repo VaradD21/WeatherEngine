@@ -37,6 +37,9 @@ class UserHealthProfileController(
         profile.hasAsthma = dto.hasAsthma
         profile.hasAllergies = dto.hasAllergies
         profile.hasSkinSensitivity = dto.hasSkinSensitivity
+        profile.hasMigraines = dto.hasMigraines
+        profile.hasJointPain = dto.hasJointPain
+        profile.hasHeatSensitivity = dto.hasHeatSensitivity
         profile.aqiThreshold = dto.aqiThreshold
         profile.uvThreshold = dto.uvThreshold
         profile.humidityThreshold = dto.humidityThreshold
@@ -52,6 +55,9 @@ class UserHealthProfileController(
         hasAsthma = this.hasAsthma,
         hasAllergies = this.hasAllergies,
         hasSkinSensitivity = this.hasSkinSensitivity,
+        hasMigraines = this.hasMigraines,
+        hasJointPain = this.hasJointPain,
+        hasHeatSensitivity = this.hasHeatSensitivity,
         aqiThreshold = this.aqiThreshold,
         uvThreshold = this.uvThreshold,
         humidityThreshold = this.humidityThreshold,

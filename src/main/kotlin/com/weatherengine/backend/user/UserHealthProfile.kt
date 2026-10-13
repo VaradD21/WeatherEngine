@@ -21,6 +21,15 @@ class UserHealthProfile(
     @Column(name = "has_skin_sensitivity")
     var hasSkinSensitivity: Boolean = false,
 
+    @Column(name = "has_migraines")
+    var hasMigraines: Boolean = false,
+
+    @Column(name = "has_joint_pain")
+    var hasJointPain: Boolean = false,
+
+    @Column(name = "has_heat_sensitivity")
+    var hasHeatSensitivity: Boolean = false,
+
     @Column(name = "aqi_threshold")
     var aqiThreshold: Int = 100,
 
