@@ -41,12 +41,16 @@ class WeatherEngineApp : Application() {
     }
 }
 
+import com.weatherengine.app.ui.customize.CustomizeWidgetsScreen
+import com.weatherengine.app.ui.customize.CustomizeWidgetsViewModel
+
 sealed class Screen(val route: String) {
     data object Auth : Screen("auth")
     data object HealthProfile : Screen("health_profile")
     data object PersonaPicker : Screen("persona_picker")
     data object Home : Screen("home")
     data object Settings : Screen("settings")
+    data object CustomizeWidgets : Screen("customize_widgets")
 }
 
 class MainActivity : ComponentActivity() {
@@ -110,13 +114,20 @@ fun WeatherEngineAppNav(app: ComponentActivity) {
         }
         composable(Screen.Home.route) {
             val vm: HomeViewModel = viewModel(factory = vmFactory {
-                HomeViewModel(container.forecastRepository, container.repository, container.settingsStore, AndroidLocationProvider(app))
+                HomeViewModel(
+                    container.forecastRepository,
+                    container.repository,
+                    container.settingsStore,
+                    AndroidLocationProvider(app),
+                    appContext = app.applicationContext
+                )
             })
             HomeScreen(
                 viewModel = vm,
                 onNavigateSettings = { navController.navigate(Screen.Settings.route) },
                 onNavigatePersonas = { navController.navigate(Screen.PersonaPicker.route) },
-                onNavigateAuth = { navController.navigate(Screen.Auth.route) }
+                onNavigateAuth = { navController.navigate(Screen.Auth.route) },
+                onNavigateCustomize = { navController.navigate(Screen.CustomizeWidgets.route) }
             )
         }
         composable(Screen.PersonaPicker.route) {
@@ -134,7 +145,17 @@ fun WeatherEngineAppNav(app: ComponentActivity) {
                 viewModel = vm,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigatePersonas = { navController.navigate(Screen.PersonaPicker.route) },
+                onNavigateCustomize = { navController.navigate(Screen.CustomizeWidgets.route) },
                 onLogout = { navController.navigate(Screen.Auth.route) { popUpTo(0) { inclusive = true } } }
+            )
+        }
+        composable(Screen.CustomizeWidgets.route) {
+            val vm: CustomizeWidgetsViewModel = viewModel(factory = vmFactory {
+                CustomizeWidgetsViewModel(container.settingsStore)
+            })
+            CustomizeWidgetsScreen(
+                viewModel = vm,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

@@ -50,24 +50,24 @@ fun AuroraBackground(
     val bgBrush = if (isDark) {
         Brush.verticalGradient(
             colors = listOf(
-                Color(0xFF0B111E),
-                Color(0xFF0F172A),
-                Color(0xFF06090F)
+                Color(0xFF070B14),
+                Color(0xFF0D1629),
+                Color(0xFF111E38),
+                Color(0xFF080D18)
             )
         )
     } else {
         Brush.verticalGradient(
             colors = listOf(
-                Color(0xFFF0F5FF),
+                Color(0xFFEFF6FF),
                 Color(0xFFE2E8F0),
-                Color(0xFFFFFFFF)
+                Color(0xFFF8FAFC)
             )
         )
     }
 
     Box(
-        modifier = modifier
-            .background(bgBrush),
+        modifier = modifier.background(bgBrush),
         content = content
     )
 }
@@ -77,31 +77,55 @@ fun GlassCard(
     modifier: Modifier = Modifier,
     shape: Shape = GlassCardShape,
     elevation: Dp = 0.dp,
-    borderBrush: Brush = Brush.linearGradient(
-        listOf(
-            Color.White.copy(alpha = 0.25f),
-            Color.White.copy(alpha = 0.05f)
-        )
-    ),
-    containerColor: Color = if (androidx.compose.foundation.isSystemInDarkTheme()) {
-        Color(0xFF161F30).copy(alpha = 0.70f)
-    } else {
-        Color.White.copy(alpha = 0.88f)
-    },
+    borderBrush: Brush? = null,
+    containerColor: Color? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val resolvedBorder = borderBrush ?: Brush.verticalGradient(
+        listOf(
+            Color.White.copy(alpha = if (isDark) 0.30f else 0.65f),
+            Color.White.copy(alpha = if (isDark) 0.10f else 0.25f),
+            Color.White.copy(alpha = 0.02f)
+        )
+    )
+    val resolvedContainer = containerColor ?: if (isDark) {
+        Color(0xFF131D31).copy(alpha = 0.68f)
+    } else {
+        Color.White.copy(alpha = 0.85f)
+    }
+
     Box(
         modifier = modifier
             .shadow(elevation = elevation, shape = shape, clip = false)
             .clip(shape)
-            .background(containerColor)
+            .background(resolvedContainer)
             .border(
                 BorderStroke(
                     width = 1.dp,
-                    brush = borderBrush
+                    brush = resolvedBorder
                 ),
                 shape = shape
             ),
+        content = content
+    )
+}
+
+@Composable
+fun GlassBadge(
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = Color.White.copy(alpha = 0.12f),
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = modifier
+            .clip(GlassPillShape)
+            .background(backgroundColor)
+            .border(
+                BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)),
+                shape = GlassPillShape
+            )
+            .padding(horizontal = 10.dp, vertical = 4.dp),
         content = content
     )
 }

@@ -14,6 +14,9 @@ import com.weatherengine.app.data.repository.ForecastRepository
 import com.weatherengine.app.data.repository.WeatherEngineRepository
 import com.weatherengine.app.persona.PersonaRules
 import com.weatherengine.app.persona.PersonaWidgetType
+import android.content.Context
+import com.weatherengine.app.core.notification.AlertNotificationManager
+import com.weatherengine.app.widget.WeatherAppWidgetProvider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -50,7 +53,8 @@ class HomeViewModel(
     private val repository: WeatherEngineRepository,
     private val settingsStore: SettingsStore,
     private val locationProvider: LocationProvider? = null,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val appContext: Context? = null
 ) : ViewModel() {
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -161,6 +165,9 @@ class HomeViewModel(
                 when (val forecastResult = forecastDeferred.await()) {
                     is NetworkResult.Success -> {
                         _forecastState.value = ForecastUiState.Success(forecastResult.data)
+                        appContext?.let { ctx ->
+                            WeatherAppWidgetProvider.updateAllWidgets(ctx, forecastResult.data, resolvedLabel)
+                        }
                     }
                     is NetworkResult.Failure -> {
                         _forecastState.value = ForecastUiState.Error(forecastResult.message)
@@ -187,7 +194,13 @@ class HomeViewModel(
                                     settingsStore.cacheHomepage(jsonStr, System.currentTimeMillis())
                                 } catch (_: Exception) {}
 
-                                _uiState.value = HomeUiState.Content(widgets = mapped)
+                                val customized = applyWidgetCustomization(mapped)
+                                _uiState.value = HomeUiState.Content(widgets = customized)
+
+                                appContext?.let { ctx ->
+                                    val notificationsOn = settingsStore.notificationsEnabledFlow.first()
+                                    AlertNotificationManager.checkAndNotifyAlerts(ctx, mapped, notificationsOn)
+                                }
                             }
                         }
                         is NetworkResult.Failure -> {
@@ -200,7 +213,8 @@ class HomeViewModel(
                                     val mapped = cachedResponse.widgets.map { dto ->
                                         WidgetMapper.mapWidget(dto.type, dto.data)
                                     }
-                                    _uiState.value = HomeUiState.Content(widgets = mapped)
+                                    val customized = applyWidgetCustomization(mapped)
+                                    _uiState.value = HomeUiState.Content(widgets = customized)
                                 } catch (_: Exception) {
                                     if (isParentSelected) {
                                         _uiState.value = HomeUiState.Content(widgets = parentOfflineWidgets())
@@ -225,6 +239,18 @@ class HomeViewModel(
             } finally {
                 _isRefreshing.value = false
             }
+        }
+    }
+
+    private suspend fun applyWidgetCustomization(raw: List<WidgetUi>): List<WidgetUi> {
+        val customOrder = settingsStore.widgetOrderFlow.first()
+        val disabledSet = settingsStore.disabledWidgetsFlow.first()
+        val filtered = raw.filter { it.type !in disabledSet }
+        return if (customOrder.isNotEmpty()) {
+            val orderMap = customOrder.withIndex().associate { it.value to it.index }
+            filtered.sortedBy { orderMap[it.type] ?: 999 }
+        } else {
+            filtered
         }
     }
 
