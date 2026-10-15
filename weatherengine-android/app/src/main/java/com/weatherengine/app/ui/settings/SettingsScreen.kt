@@ -17,7 +17,8 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onNavigateBack: () -> Unit,
     onNavigatePersonas: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateCustomize: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -146,6 +147,12 @@ fun SettingsScreen(
                         Text("Save School Hours")
                     }
                 }
+            }
+
+            OutlinedButton(onClick = onNavigateCustomize, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                Icon(androidx.compose.material.icons.Icons.Default.Widgets, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Customize Widgets & Home Screen")
             }
 
             OutlinedButton(onClick = onNavigatePersonas, modifier = Modifier.fillMaxWidth().height(48.dp)) {

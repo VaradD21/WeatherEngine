@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">WeatherEngine</string>
+    <string name="widget_description">Shows live temperature, condition, and smart weather highlights right on your home screen.</string>
 </resources>

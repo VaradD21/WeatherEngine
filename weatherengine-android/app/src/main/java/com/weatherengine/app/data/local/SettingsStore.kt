@@ -60,6 +60,10 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
         val KEY_SCHOOL_END = stringPreferencesKey("school_end")
         const val DEFAULT_SCHOOL_START = "08:00"
         const val DEFAULT_SCHOOL_END = "15:00"
+
+        val KEY_WIDGET_ORDER = stringPreferencesKey("custom_widget_order")
+        val KEY_DISABLED_WIDGETS = stringSetPreferencesKey("disabled_widgets")
+        val KEY_NOTIFICATIONS_ENABLED = androidx.datastore.preferences.core.booleanPreferencesKey("notifications_enabled")
     }
 
     private val safePreferences: Flow<Preferences> = dataStore?.data
@@ -69,7 +73,7 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
             } else {
                 throw exception
             }
-        } ?: kotlinx.coroutines.flow.emptyFlow()
+        } ?: kotlinx.coroutines.flow.flowOf(emptyPreferences())
 
     open val tokenFlow: Flow<String?> = safePreferences.map { it[KEY_TOKEN] }
     open val baseUrlFlow: Flow<String> = safePreferences.map { it[KEY_BASE_URL] ?: DEFAULT_BASE_URL }
@@ -161,9 +165,42 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
         it[KEY_SAVED_PHONE_URL] ?: DEFAULT_PHONE_LAN_URL
     }
 
+    open val widgetOrderFlow: Flow<List<String>> = safePreferences.map { prefs ->
+        val raw = prefs[KEY_WIDGET_ORDER]
+        if (raw.isNullOrBlank()) emptyList() else raw.split(",").filter { it.isNotBlank() }
+    }
+
+    open val disabledWidgetsFlow: Flow<Set<String>> = safePreferences.map { prefs ->
+        prefs[KEY_DISABLED_WIDGETS] ?: emptySet()
+    }
+
+    open val notificationsEnabledFlow: Flow<Boolean> = safePreferences.map { prefs ->
+        prefs[KEY_NOTIFICATIONS_ENABLED] ?: true
+    }
+
     open suspend fun savePhoneUrl(url: String) {
         dataStore?.edit { prefs ->
             prefs[KEY_SAVED_PHONE_URL] = url
+        }
+    }
+
+    open suspend fun saveWidgetOrder(order: List<String>) {
+        dataStore?.edit { prefs ->
+            prefs[KEY_WIDGET_ORDER] = order.joinToString(",")
+        }
+    }
+
+    open suspend fun setWidgetDisabled(widgetType: String, disabled: Boolean) {
+        dataStore?.edit { prefs ->
+            val current = (prefs[KEY_DISABLED_WIDGETS] ?: emptySet()).toMutableSet()
+            if (disabled) current.add(widgetType) else current.remove(widgetType)
+            prefs[KEY_DISABLED_WIDGETS] = current
+        }
+    }
+
+    open suspend fun setNotificationsEnabled(enabled: Boolean) {
+        dataStore?.edit { prefs ->
+            prefs[KEY_NOTIFICATIONS_ENABLED] = enabled
         }
     }
 }
