@@ -40,6 +40,12 @@ interface WeatherEngineRepository {
         NetworkResult.Success(HealthProfileDto())
     suspend fun updateHealthProfile(profile: HealthProfileDto): NetworkResult<HealthProfileDto> =
         NetworkResult.Success(profile)
+    suspend fun getPreferences(): NetworkResult<com.weatherengine.app.data.model.UserPreferencesDto> =
+        NetworkResult.Success(com.weatherengine.app.data.model.UserPreferencesDto())
+    suspend fun updatePreferences(preferences: com.weatherengine.app.data.model.UserPreferencesDto): NetworkResult<com.weatherengine.app.data.model.UserPreferencesDto> =
+        NetworkResult.Success(preferences)
+    suspend fun syncCloudPreferences(): NetworkResult<com.weatherengine.app.data.model.UserPreferencesDto> =
+        NetworkResult.Success(com.weatherengine.app.data.model.UserPreferencesDto())
     suspend fun getHomepage(lat: Double, lon: Double): NetworkResult<HomepageResponse> =
         getHomepage(lat, lon, null, null)
     suspend fun getHomepage(
@@ -118,9 +124,37 @@ class RemoteRepository(
         schoolStart: String?,
         schoolEnd: String?
     ): NetworkResult<HomepageResponse> {
-        return safeApiCall(isProtected = true) {
+        val result = safeApiCall(isProtected = true) {
             apiServiceProvider().getHomepage(lat, lon, schoolStart, schoolEnd)
         }
+        if (result is NetworkResult.Success && result.data.preferences != null) {
+            settingsStore.saveCloudPreferences(result.data.preferences)
+        }
+        return result
+    }
+
+    override suspend fun getPreferences(): NetworkResult<com.weatherengine.app.data.model.UserPreferencesDto> {
+        return safeApiCall(isProtected = true) {
+            apiServiceProvider().getPreferences()
+        }
+    }
+
+    override suspend fun updatePreferences(preferences: com.weatherengine.app.data.model.UserPreferencesDto): NetworkResult<com.weatherengine.app.data.model.UserPreferencesDto> {
+        val result = safeApiCall(isProtected = true) {
+            apiServiceProvider().updatePreferences(preferences)
+        }
+        if (result is NetworkResult.Success) {
+            settingsStore.saveCloudPreferences(result.data)
+        }
+        return result
+    }
+
+    override suspend fun syncCloudPreferences(): NetworkResult<com.weatherengine.app.data.model.UserPreferencesDto> {
+        val result = getPreferences()
+        if (result is NetworkResult.Success) {
+            settingsStore.saveCloudPreferences(result.data)
+        }
+        return result
     }
 
     private suspend fun <T> safeApiCall(

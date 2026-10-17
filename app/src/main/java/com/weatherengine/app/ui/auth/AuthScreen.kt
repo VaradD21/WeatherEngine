@@ -95,6 +95,7 @@ class AuthViewModel(
                         if (p is NetworkResult.Success && p.data.isNotEmpty()) {
                             settingsStore.saveSelectedPersonas(p.data.map { it.code }.toSet())
                         }
+                        repository.syncCloudPreferences()
                     }
                     _uiState.update { it.copy(isLoading = false) }
                     _navigateToNextScreen.tryEmit(s.isSignUp)

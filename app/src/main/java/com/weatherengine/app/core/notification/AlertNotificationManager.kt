@@ -59,12 +59,14 @@ object AlertNotificationManager {
         for (widget in widgets) {
             when (widget) {
                 is WidgetUi.SevereWeather -> {
+                    val firstAlert = widget.alerts.firstOrNull()
+                    val alertType = firstAlert?.type ?: "Severe Weather"
                     postNotificationIfFresh(
                         context = context,
-                        key = "severe_${widget.headline}_${widget.severity}",
+                        key = "severe_${alertType}_${widget.message.hashCode()}",
                         id = 1001,
-                        title = "⚠️ Weather Alert: ${widget.headline}",
-                        message = widget.instruction ?: widget.description
+                        title = "⚠️ Weather Alert: $alertType",
+                        message = firstAlert?.message ?: widget.message
                     )
                 }
                 is WidgetUi.HeatAlert -> {
@@ -93,9 +95,9 @@ object AlertNotificationManager {
                     if (widget.alertActive) {
                         postNotificationIfFresh(
                             context = context,
-                            key = "frost_${widget.minTemp}",
+                            key = "frost_${widget.alertLevel}_${widget.frostRiskDayCount}",
                             id = 1004,
-                            title = "❄️ Frost Warning for Plants",
+                            title = "❄️ Frost Warning (${widget.alertLevel})",
                             message = widget.message
                         )
                     }
@@ -112,12 +114,12 @@ object AlertNotificationManager {
                     }
                 }
                 is WidgetUi.FlightAlert -> {
-                    if (widget.alertActive) {
+                    if (widget.hasDisruptionRisk) {
                         postNotificationIfFresh(
                             context = context,
-                            key = "flight_${widget.destination}",
+                            key = "flight_${widget.flightStatus}_${widget.severity}",
                             id = 1006,
-                            title = "✈️ Flight Weather Alert: ${widget.destination}",
+                            title = "✈️ Flight Weather Alert: ${widget.flightStatus}",
                             message = widget.message
                         )
                     }

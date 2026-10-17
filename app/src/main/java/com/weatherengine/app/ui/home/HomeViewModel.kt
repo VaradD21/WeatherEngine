@@ -80,6 +80,8 @@ class HomeViewModel(
     private val _activePersonaWidgets = MutableStateFlow<List<PersonaWidgetType>>(emptyList())
     val activePersonaWidgets: StateFlow<List<PersonaWidgetType>> = _activePersonaWidgets.asStateFlow()
 
+    val defaultScreenFlow = settingsStore.defaultScreenFlow
+
     private var fetchJob: Job? = null
 
     init {
@@ -167,6 +169,8 @@ class HomeViewModel(
                         _forecastState.value = ForecastUiState.Success(forecastResult.data)
                         appContext?.let { ctx ->
                             WeatherAppWidgetProvider.updateAllWidgets(ctx, forecastResult.data, resolvedLabel)
+                            com.weatherengine.app.widget.WeatherGlanceWidgetProvider.updateAllWidgets(ctx, forecastResult.data, resolvedLabel)
+                            com.weatherengine.app.widget.AqiAlertWidgetProvider.updateAllWidgets(ctx, forecastResult.data, resolvedLabel)
                         }
                     }
                     is NetworkResult.Failure -> {

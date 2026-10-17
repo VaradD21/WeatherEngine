@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -150,7 +151,7 @@ fun SettingsScreen(
             }
 
             OutlinedButton(onClick = onNavigateCustomize, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                Icon(androidx.compose.material.icons.Icons.Default.Widgets, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Widgets, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Customize Widgets & Home Screen")
             }

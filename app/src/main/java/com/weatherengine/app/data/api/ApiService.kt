@@ -7,6 +7,7 @@ import com.weatherengine.app.data.model.LoginRequest
 import com.weatherengine.app.data.model.PersonaDto
 import com.weatherengine.app.data.model.SetPersonasRequest
 import com.weatherengine.app.data.model.SignupRequest
+import com.weatherengine.app.data.model.UserPreferencesDto
 import com.weatherengine.app.data.model.WeatherBundleDto
 import okhttp3.Interceptor
 import retrofit2.Response
@@ -96,4 +97,12 @@ interface ApiService {
     suspend fun updateHealthProfile(
         @Body request: HealthProfileDto
     ): Response<HealthProfileDto>
+
+    @GET("api/users/me/preferences")
+    suspend fun getPreferences(): Response<UserPreferencesDto>
+
+    @PUT("api/users/me/preferences")
+    suspend fun updatePreferences(
+        @Body request: UserPreferencesDto
+    ): Response<UserPreferencesDto>
 }

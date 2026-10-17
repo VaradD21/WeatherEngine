@@ -64,6 +64,7 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
         val KEY_WIDGET_ORDER = stringPreferencesKey("custom_widget_order")
         val KEY_DISABLED_WIDGETS = stringSetPreferencesKey("disabled_widgets")
         val KEY_NOTIFICATIONS_ENABLED = androidx.datastore.preferences.core.booleanPreferencesKey("notifications_enabled")
+        val KEY_DEFAULT_SCREEN = stringPreferencesKey("default_screen")
     }
 
     private val safePreferences: Flow<Preferences> = dataStore?.data
@@ -178,6 +179,10 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
         prefs[KEY_NOTIFICATIONS_ENABLED] ?: true
     }
 
+    open val defaultScreenFlow: Flow<String> = safePreferences.map { prefs ->
+        prefs[KEY_DEFAULT_SCREEN] ?: "home"
+    }
+
     open suspend fun savePhoneUrl(url: String) {
         dataStore?.edit { prefs ->
             prefs[KEY_SAVED_PHONE_URL] = url
@@ -187,6 +192,12 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
     open suspend fun saveWidgetOrder(order: List<String>) {
         dataStore?.edit { prefs ->
             prefs[KEY_WIDGET_ORDER] = order.joinToString(",")
+        }
+    }
+
+    open suspend fun saveDisabledWidgets(disabled: Set<String>) {
+        dataStore?.edit { prefs ->
+            prefs[KEY_DISABLED_WIDGETS] = disabled
         }
     }
 
@@ -201,6 +212,30 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
     open suspend fun setNotificationsEnabled(enabled: Boolean) {
         dataStore?.edit { prefs ->
             prefs[KEY_NOTIFICATIONS_ENABLED] = enabled
+        }
+    }
+
+    open suspend fun saveDefaultScreen(screen: String) {
+        dataStore?.edit { prefs ->
+            prefs[KEY_DEFAULT_SCREEN] = screen
+        }
+    }
+
+    open suspend fun saveCloudPreferences(dto: com.weatherengine.app.data.model.UserPreferencesDto) {
+        dataStore?.edit { prefs ->
+            if (dto.widgetOrder.isNotEmpty()) {
+                prefs[KEY_WIDGET_ORDER] = dto.widgetOrder.joinToString(",")
+            }
+            prefs[KEY_DISABLED_WIDGETS] = dto.disabledWidgets
+            if (dto.defaultScreen.isNotBlank()) {
+                prefs[KEY_DEFAULT_SCREEN] = dto.defaultScreen
+            }
+            if (dto.schoolStart.isNotBlank()) {
+                prefs[KEY_SCHOOL_START] = dto.schoolStart
+            }
+            if (dto.schoolEnd.isNotBlank()) {
+                prefs[KEY_SCHOOL_END] = dto.schoolEnd
+            }
         }
     }
 }

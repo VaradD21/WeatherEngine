@@ -4,7 +4,11 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.weatherengine.app.data.local.SettingsStore
+import com.weatherengine.app.data.model.UserPreferencesDto
+import com.weatherengine.app.data.repository.WeatherEngineRepository
+import com.weatherengine.app.widget.AqiAlertWidgetProvider
 import com.weatherengine.app.widget.WeatherAppWidgetProvider
+import com.weatherengine.app.widget.WeatherGlanceWidgetProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,12 +25,14 @@ data class CustomWidgetItem(
 
 data class CustomizeWidgetsUiState(
     val items: List<CustomWidgetItem> = emptyList(),
+    val defaultScreen: String = "home",
     val isSaved: Boolean = false,
     val feedbackMessage: String? = null
 )
 
 class CustomizeWidgetsViewModel(
-    private val settingsStore: SettingsStore
+    private val settingsStore: SettingsStore,
+    private val repository: WeatherEngineRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CustomizeWidgetsUiState())
@@ -40,10 +46,10 @@ class CustomizeWidgetsViewModel(
         viewModelScope.launch {
             val customOrder = settingsStore.widgetOrderFlow.first()
             val disabledSet = settingsStore.disabledWidgetsFlow.first()
+            val defaultScreen = settingsStore.defaultScreenFlow.first()
 
             val allDefaults = defaultWidgetRegistry()
 
-            // Merge order: custom ordered items first, then any remaining items
             val orderedTypes = if (customOrder.isNotEmpty()) {
                 val registeredTypes = allDefaults.map { it.type }
                 val validCustom = customOrder.filter { it in registeredTypes }
@@ -58,7 +64,10 @@ class CustomizeWidgetsViewModel(
                 mapByType[type]?.copy(isEnabled = type !in disabledSet)
             }
 
-            _uiState.value = CustomizeWidgetsUiState(items = resolvedList)
+            _uiState.value = CustomizeWidgetsUiState(
+                items = resolvedList,
+                defaultScreen = defaultScreen
+            )
         }
     }
 
@@ -87,24 +96,55 @@ class CustomizeWidgetsViewModel(
         _uiState.value = _uiState.value.copy(items = list)
         viewModelScope.launch {
             settingsStore.setWidgetDisabled(widgetType, !enabled)
+            syncPreferencesToCloud()
+        }
+    }
+
+    fun setDefaultScreen(screen: String) {
+        _uiState.value = _uiState.value.copy(
+            defaultScreen = screen,
+            feedbackMessage = "Initial opening view updated!"
+        )
+        viewModelScope.launch {
+            settingsStore.saveDefaultScreen(screen)
+            syncPreferencesToCloud()
         }
     }
 
     fun resetToDefault() {
         viewModelScope.launch {
             settingsStore.saveWidgetOrder(emptyList())
+            settingsStore.saveDefaultScreen("home")
             val all = defaultWidgetRegistry()
             _uiState.value = CustomizeWidgetsUiState(
                 items = all,
+                defaultScreen = "home",
                 feedbackMessage = "Widget arrangement reset to default"
             )
+            syncPreferencesToCloud()
         }
     }
 
-    fun pinAppWidget(context: Context): Boolean {
+    fun pinDetailedWidget(context: Context): Boolean {
         val success = WeatherAppWidgetProvider.pinToHomeScreen(context)
         _uiState.value = _uiState.value.copy(
-            feedbackMessage = if (success) "Home screen widget prompt opened!" else "Pinning not supported on this launcher"
+            feedbackMessage = if (success) "Detailed Widget pin prompt opened!" else "Pinning not supported on this launcher"
+        )
+        return success
+    }
+
+    fun pinGlanceWidget(context: Context): Boolean {
+        val success = WeatherGlanceWidgetProvider.pinToHomeScreen(context)
+        _uiState.value = _uiState.value.copy(
+            feedbackMessage = if (success) "Quick Glance Widget pin prompt opened!" else "Pinning not supported on this launcher"
+        )
+        return success
+    }
+
+    fun pinAqiAlertWidget(context: Context): Boolean {
+        val success = AqiAlertWidgetProvider.pinToHomeScreen(context)
+        _uiState.value = _uiState.value.copy(
+            feedbackMessage = if (success) "Air & Health Shield Widget pin prompt opened!" else "Pinning not supported on this launcher"
         )
         return success
     }
@@ -112,6 +152,25 @@ class CustomizeWidgetsViewModel(
     private fun saveOrder(items: List<CustomWidgetItem>) {
         viewModelScope.launch {
             settingsStore.saveWidgetOrder(items.map { it.type })
+            syncPreferencesToCloud()
+        }
+    }
+
+    private fun syncPreferencesToCloud() {
+        viewModelScope.launch {
+            val token = settingsStore.tokenFlow.first()
+            if (!token.isNullOrBlank()) {
+                val order = _uiState.value.items.map { it.type }
+                val disabled = _uiState.value.items.filter { !it.isEnabled }.map { it.type }.toSet()
+                val screen = _uiState.value.defaultScreen
+                repository?.updatePreferences(
+                    UserPreferencesDto(
+                        widgetOrder = order,
+                        disabledWidgets = disabled,
+                        defaultScreen = screen
+                    )
+                )
+            }
         }
     }
 
