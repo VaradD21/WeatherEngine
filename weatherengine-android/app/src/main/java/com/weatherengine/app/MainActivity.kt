@@ -21,6 +21,8 @@ import com.weatherengine.app.data.di.AppContainer
 import com.weatherengine.app.data.location.AndroidLocationProvider
 import com.weatherengine.app.ui.auth.AuthScreen
 import com.weatherengine.app.ui.auth.AuthViewModel
+import com.weatherengine.app.ui.customize.CustomizeWidgetsScreen
+import com.weatherengine.app.ui.customize.CustomizeWidgetsViewModel
 import com.weatherengine.app.ui.health.HealthProfileScreen
 import com.weatherengine.app.ui.health.HealthProfileViewModel
 import com.weatherengine.app.ui.home.HomeScreen
@@ -30,6 +32,7 @@ import com.weatherengine.app.ui.personas.PersonaPickerViewModel
 import com.weatherengine.app.ui.settings.SettingsScreen
 import com.weatherengine.app.ui.settings.SettingsViewModel
 import com.weatherengine.app.ui.theme.WeatherEngineTheme
+import kotlinx.coroutines.flow.first
 
 class WeatherEngineApp : Application() {
     lateinit var appContainer: AppContainer
@@ -40,9 +43,6 @@ class WeatherEngineApp : Application() {
         appContainer = AppContainer(this)
     }
 }
-
-import com.weatherengine.app.ui.customize.CustomizeWidgetsScreen
-import com.weatherengine.app.ui.customize.CustomizeWidgetsViewModel
 
 sealed class Screen(val route: String) {
     data object Auth : Screen("auth")
@@ -76,6 +76,16 @@ private inline fun <VM : ViewModel> vmFactory(crossinline create: () -> VM) =
 fun WeatherEngineAppNav(app: ComponentActivity) {
     val container = (app.application as WeatherEngineApp).appContainer
     val navController = rememberNavController()
+
+    LaunchedEffect(Unit) {
+        val token = container.settingsStore.tokenFlow.first()
+        if (!token.isNullOrBlank()) {
+            runCatching { container.repository.syncCloudPreferences() }
+            navController.navigate(Screen.Home.route) {
+                popUpTo(Screen.Auth.route) { inclusive = true }
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         container.remoteRepository.sessionExpiredEvents.collect {
@@ -151,7 +161,7 @@ fun WeatherEngineAppNav(app: ComponentActivity) {
         }
         composable(Screen.CustomizeWidgets.route) {
             val vm: CustomizeWidgetsViewModel = viewModel(factory = vmFactory {
-                CustomizeWidgetsViewModel(container.settingsStore)
+                CustomizeWidgetsViewModel(container.settingsStore, container.repository)
             })
             CustomizeWidgetsScreen(
                 viewModel = vm,

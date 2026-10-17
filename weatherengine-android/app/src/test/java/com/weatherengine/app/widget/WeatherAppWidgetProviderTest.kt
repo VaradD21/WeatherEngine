@@ -10,5 +10,7 @@ class WeatherAppWidgetProviderTest {
     fun testProviderActionConstant() {
         assertEquals("com.weatherengine.app.ACTION_UPDATE_WEATHER", WeatherAppWidgetProvider.ACTION_UPDATE_WEATHER)
         assertNotNull(WeatherAppWidgetProvider())
+        assertNotNull(WeatherGlanceWidgetProvider())
+        assertNotNull(AqiAlertWidgetProvider())
     }
 }

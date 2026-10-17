@@ -9,7 +9,9 @@ app-config.properties
 local.properties
 **/local.properties
 firebase-service-account.json
+**/firebase-service-account.json
 google-services.json
+**/google-services.json
 *.jks
 *.keystore
 *.pem
@@ -34,6 +36,7 @@ out/
 *.dex
 *.apk
 *.aab
+*.aar
 output-metadata.json
 *.hprof
 reports/
@@ -41,6 +44,7 @@ reports/
 test-results/
 **/test-results/
 lint-results*
+**/lint-results*
 
 # IDE, Editors & Agent Tooling
 .idea/
@@ -60,6 +64,7 @@ lint-results*
 .antigravity/
 **/.antigravity/
 !.antigravity/rules.md
+!**/.antigravity/rules.md
 captures/
 **/captures/
 .externalNativeBuild/
@@ -76,6 +81,7 @@ captures/
 *.sqlite
 *.sqlite3
 *.log
+daemon-*.out.log
 hs_err_pid*
 replay_pid*
 *.tmp

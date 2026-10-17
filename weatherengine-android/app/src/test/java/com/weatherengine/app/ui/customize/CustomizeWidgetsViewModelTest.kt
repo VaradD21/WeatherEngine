@@ -98,4 +98,18 @@ class CustomizeWidgetsViewModelTest {
         val items = viewModel.uiState.value.items
         assertEquals(CustomizeWidgetsViewModel.defaultWidgetRegistry().first().type, items.first().type)
     }
+
+    @Test
+    fun testSetDefaultScreen_updatesDefaultScreen() = runTest(testDispatcher) {
+        val viewModel = CustomizeWidgetsViewModel(settingsStore)
+        advanceUntilIdle()
+
+        assertEquals("home", viewModel.uiState.value.defaultScreen)
+
+        viewModel.setDefaultScreen("health")
+        advanceUntilIdle()
+
+        assertEquals("health", viewModel.uiState.value.defaultScreen)
+        assertEquals("Initial opening view updated!", viewModel.uiState.value.feedbackMessage)
+    }
 }

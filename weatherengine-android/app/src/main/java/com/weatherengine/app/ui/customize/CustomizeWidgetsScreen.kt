@@ -1,14 +1,16 @@
 package com.weatherengine.app.ui.customize
 
 import android.widget.Toast
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddAlert
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.*
@@ -69,56 +71,107 @@ fun CustomizeWidgetsScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                item {
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-
-                // ── Home Screen Widget Promo Card ──────────────────────────────
+                // ── First Screen On Launch Selector ───────────────────────────
                 item {
                     GlassCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(18.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Widgets,
-                                    contentDescription = null,
-                                    tint = AuroraCyan,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = "Home Screen Widget",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Icon(Icons.Default.CloudDone, contentDescription = null, tint = AuroraCyan, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("First View When Opening App", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Place a live WeatherEngine glass widget on your phone's home screen to see temperature, AQI, and alerts without opening the app.",
+                                text = "Choose what you see first. Synced to your cloud account.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Spacer(modifier = Modifier.height(14.dp))
-                            Button(
-                                onClick = { viewModel.pinAppWidget(context) },
-                                modifier = Modifier.fillMaxWidth().height(46.dp)
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(Icons.Default.Widgets, contentDescription = null, modifier = Modifier.size(18.dp))
+                                val options = listOf(
+                                    "home" to "All Widgets",
+                                    "weather" to "Forecast & Hourly",
+                                    "health" to "Air Quality & UV",
+                                    "commute" to "Commute & Traffic",
+                                    "gardener" to "Garden & Soil"
+                                )
+                                options.forEach { (key, label) ->
+                                    val isSelected = state.defaultScreen == key
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = { viewModel.setDefaultScreen(key) },
+                                        label = { Text(label, fontSize = 12.sp) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = AuroraCyan.copy(alpha = 0.25f),
+                                            selectedLabelColor = AuroraCyan
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ── Android Home Screen Widgets Hub ───────────────────────────
+                item {
+                    GlassCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Widgets, contentDescription = null, tint = AuroraCyan, modifier = Modifier.size(22.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Add Widget to Home Screen")
+                                Text("Android Home Screen Widgets", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Add live glass widgets to your phone's home screen with one tap:",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = { viewModel.pinDetailedWidget(context) },
+                                    modifier = Modifier.weight(1f).height(40.dp),
+                                    contentPadding = PaddingValues(horizontal = 6.dp)
+                                ) {
+                                    Text("Detailed (4x2)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                                Button(
+                                    onClick = { viewModel.pinGlanceWidget(context) },
+                                    modifier = Modifier.weight(1f).height(40.dp),
+                                    contentPadding = PaddingValues(horizontal = 6.dp)
+                                ) {
+                                    Text("Glance (2x1)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                                Button(
+                                    onClick = { viewModel.pinAqiAlertWidget(context) },
+                                    modifier = Modifier.weight(1f).height(40.dp),
+                                    contentPadding = PaddingValues(horizontal = 6.dp)
+                                ) {
+                                    Text("AQI Shield", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                }
                             }
                         }
                     }
                 }
 
                 item {
-                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    Column(modifier = Modifier.padding(vertical = 2.dp)) {
                         Text(
-                            text = "Dashboard Reordering",
+                            text = "Arrange Dashboard Cards",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Use arrows to position what widget goes where on your main feed.",
+                            text = "Use arrows to reorder. Switches toggle card visibility.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -154,9 +207,7 @@ private fun WidgetItemCard(
     onMoveDown: () -> Unit,
     onToggle: (Boolean) -> Unit
 ) {
-    GlassCard(
-        modifier = Modifier.fillMaxWidth()
-    ) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -177,11 +228,7 @@ private fun WidgetItemCard(
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = item.title,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(text = item.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -192,7 +239,6 @@ private fun WidgetItemCard(
                 )
             }
 
-            // Up / Down arrows
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onMoveUp, enabled = canMoveUp, modifier = Modifier.size(34.dp)) {
                     Icon(
@@ -211,10 +257,7 @@ private fun WidgetItemCard(
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
-                Switch(
-                    checked = item.isEnabled,
-                    onCheckedChange = onToggle
-                )
+                Switch(checked = item.isEnabled, onCheckedChange = onToggle)
             }
         }
     }

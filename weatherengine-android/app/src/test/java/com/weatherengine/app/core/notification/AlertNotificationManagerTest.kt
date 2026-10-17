@@ -20,11 +20,8 @@ class AlertNotificationManagerTest {
             message = "Extreme heat advisory"
         )
         val severe = WidgetUi.SevereWeather(
-            severity = "Severe",
-            headline = "Thunderstorm Warning",
-            description = "High wind and hail",
-            instruction = "Stay indoors",
-            alerts = listOf("Thunderstorm")
+            alerts = listOf(WidgetUi.SevereAlertItem("Thunderstorm", "14:00", "High wind and hail")),
+            message = "Stay indoors"
         )
 
         val widgets = listOf(heat, severe)

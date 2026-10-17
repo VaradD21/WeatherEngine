@@ -42,9 +42,21 @@ data class AuthResponse(
 )
 
 @Serializable
+data class UserPreferencesDto(
+    val widgetOrder: List<String> = emptyList(),
+    val disabledWidgets: Set<String> = emptySet(),
+    val defaultScreen: String = "home",
+    val temperatureUnit: String = "CELSIUS",
+    val schoolStart: String = "08:00",
+    val schoolEnd: String = "15:00",
+    val updatedAt: String? = null
+)
+
+@Serializable
 data class HomepageResponse(
     val widgets: List<WidgetDto> = emptyList(),
-    val message: String? = null
+    val message: String? = null,
+    val preferences: UserPreferencesDto? = null
 )
 
 @Serializable

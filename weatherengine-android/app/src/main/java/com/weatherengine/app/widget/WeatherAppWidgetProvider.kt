@@ -63,21 +63,22 @@ class WeatherAppWidgetProvider : AppWidgetProvider() {
                 val current = forecast.current
                 val loc = locationLabel ?: "WeatherEngine"
                 views.setTextViewText(R.id.widget_location, loc)
-                views.setTextViewText(R.id.widget_temperature, "${current.temperatureCelsius.toInt()}°")
-                views.setTextViewText(R.id.widget_condition, current.conditionLabel)
+                views.setTextViewText(R.id.widget_temperature, current.temperatureFormatted)
+                views.setTextViewText(R.id.widget_condition, current.condition)
 
                 val dayRange = forecast.days.firstOrNull()
                 val rangeText = if (dayRange != null) {
-                    "H:${dayRange.tempMaxCelsius.toInt()}°  L:${dayRange.tempMinCelsius.toInt()}° · Feels ${current.apparentTemperatureCelsius.toInt()}°"
+                    "H:${dayRange.maxTempFormatted}  L:${dayRange.minTempFormatted} · Feels ${current.apparentTemperatureFormatted}"
                 } else {
-                    "Feels like ${current.apparentTemperatureCelsius.toInt()}°C"
+                    "Feels like ${current.apparentTemperatureFormatted}"
                 }
                 views.setTextViewText(R.id.widget_temp_range, rangeText)
 
                 val badgeText = when {
-                    current.aqi != null -> "AQI ${current.aqi} · ${current.aqiCategory.orEmpty()}"
-                    current.uvIndex != null -> "UV ${current.uvIndex} · ${current.uvCategory.orEmpty()}"
-                    else -> "Wind ${current.windSpeedKmh.toInt()} km/h"
+                    current.aqi != null -> "AQI ${current.aqi} · ${current.aqiCategory}"
+                    current.uvIndex != null -> "UV ${current.uvIndex}"
+                    current.windSpeedKmh != null -> "Wind ${current.windSpeedKmh.toInt()} km/h"
+                    else -> current.windFormatted
                 }
                 views.setTextViewText(R.id.widget_badge_text, badgeText)
             } else {
