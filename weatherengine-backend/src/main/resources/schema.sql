@@ -68,3 +68,14 @@ CREATE TABLE IF NOT EXISTS alert_log (
     alert_type VARCHAR(50) NOT NULL,
     sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS user_preferences (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    widget_order TEXT,
+    disabled_widgets TEXT,
+    default_screen VARCHAR(50) DEFAULT 'home',
+    temperature_unit VARCHAR(10) DEFAULT 'CELSIUS',
+    school_start VARCHAR(10) DEFAULT '08:00',
+    school_end VARCHAR(10) DEFAULT '15:00',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
