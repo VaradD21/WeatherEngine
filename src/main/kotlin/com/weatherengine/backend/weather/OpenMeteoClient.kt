@@ -110,7 +110,8 @@ data class WidgetDto(
 
 data class HomepageResponse(
     val widgets: List<WidgetDto> = emptyList(),
-    val message: String? = null
+    val message: String? = null,
+    val preferences: com.weatherengine.backend.user.UserPreferencesDto? = null
 )
 
 @Component

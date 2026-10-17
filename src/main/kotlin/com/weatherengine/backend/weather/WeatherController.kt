@@ -67,7 +67,8 @@ class WeatherCacheService(
 class WeatherController(
     private val weatherCacheService: WeatherCacheService,
     private val personaService: PersonaService,
-    private val widgetBuilder: WidgetBuilder
+    private val widgetBuilder: WidgetBuilder,
+    private val preferencesRepository: com.weatherengine.backend.user.UserPreferencesRepository? = null
 ) {
 
     @GetMapping("/weather")
@@ -88,22 +89,56 @@ class WeatherController(
         @RequestParam(name = "schoolEnd", defaultValue = "15:00") schoolEnd: String
     ): ResponseEntity<HomepageResponse> {
         validateCoordinates(lat, lon)
+        
+        val userPrefs = preferencesRepository?.findById(principal.userId)?.orElse(null)
+        val effectiveStart = if (schoolStart == "08:00" && !userPrefs?.schoolStart.isNullOrBlank()) userPrefs!!.schoolStart else schoolStart
+        val effectiveEnd = if (schoolEnd == "15:00" && !userPrefs?.schoolEnd.isNullOrBlank()) userPrefs!!.schoolEnd else schoolEnd
+
         try {
-            ParentPersonaRules.parseAndValidateSchoolHours(schoolStart, schoolEnd)
+            ParentPersonaRules.parseAndValidateSchoolHours(effectiveStart, effectiveEnd)
         } catch (ex: IllegalArgumentException) {
             throw ApiException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid school hours")
         }
 
-        val widgetCodes = personaService.getUserWidgetCodes(principal.userId)
-        if (widgetCodes.isEmpty()) {
+        val defaultCodes = personaService.getUserWidgetCodes(principal.userId)
+        if (defaultCodes.isEmpty()) {
             return ResponseEntity.ok(
-                HomepageResponse(widgets = emptyList(), message = "No personas selected yet")
+                HomepageResponse(
+                    widgets = emptyList(),
+                    message = "No personas selected yet",
+                    preferences = userPrefs?.toDto()
+                )
             )
         }
 
+        val disabledSet = userPrefs?.disabledWidgets?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()
+        val customOrder = userPrefs?.widgetOrder?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+
+        val finalCodes = if (customOrder.isNotEmpty()) {
+            val ordered = customOrder.filter { it in defaultCodes && it !in disabledSet }
+            val remaining = defaultCodes.filter { it !in ordered && it !in disabledSet }
+            ordered + remaining
+        } else {
+            defaultCodes.filter { it !in disabledSet }
+        }
+
         val bundle = weatherCacheService.getCachedWeatherBundle(lat, lon)
-        val widgets = widgetCodes.map { code -> widgetBuilder.buildWidget(code, bundle, schoolStart, schoolEnd) }
-        return ResponseEntity.ok(HomepageResponse(widgets = widgets))
+        val widgets = finalCodes.map { code -> widgetBuilder.buildWidget(code, bundle, effectiveStart, effectiveEnd) }
+        return ResponseEntity.ok(HomepageResponse(widgets = widgets, preferences = userPrefs?.toDto()))
+    }
+
+    private fun com.weatherengine.backend.user.UserPreferences.toDto(): com.weatherengine.backend.user.UserPreferencesDto {
+        val order = this.widgetOrder?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+        val disabled = this.disabledWidgets?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()
+        return com.weatherengine.backend.user.UserPreferencesDto(
+            widgetOrder = order,
+            disabledWidgets = disabled,
+            defaultScreen = this.defaultScreen,
+            temperatureUnit = this.temperatureUnit,
+            schoolStart = this.schoolStart,
+            schoolEnd = this.schoolEnd,
+            updatedAt = this.updatedAt
+        )
     }
 
     private fun validateCoordinates(lat: Double, lon: Double) {
