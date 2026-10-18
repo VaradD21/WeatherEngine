@@ -9,7 +9,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate # schema.sql is the source of truth, not Hibernate auto-generation
+      ddl-auto: update # Automatically updates existing tables with new columns and tables
     properties:
       hibernate:
         format_sql: true

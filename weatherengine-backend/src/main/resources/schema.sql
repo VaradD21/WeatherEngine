@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS users (
     phone_number VARCHAR(30)
 );
 
+ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS username VARCHAR(100);
+ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(30);
+
 CREATE TABLE IF NOT EXISTS user_health_profiles (
     user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     has_asthma BOOLEAN DEFAULT false,
@@ -79,3 +82,18 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     school_end VARCHAR(10) DEFAULT '15:00',
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS user_location_history (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    latitude NUMERIC(8, 4) NOT NULL,
+    longitude NUMERIC(8, 4) NOT NULL,
+    accuracy_meters REAL,
+    hour_of_day SMALLINT NOT NULL,
+    day_of_week SMALLINT NOT NULL,
+    recorded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_location_history_user_time ON user_location_history (user_id, recorded_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_location_routine ON user_location_history (user_id, day_of_week, hour_of_day);
+

@@ -115,7 +115,7 @@ class JwtAuthenticationFilter(private val jwtService: JwtService) : OncePerReque
 @RestController
 @RequestMapping("/api/auth")
 class AuthController(private val authService: AuthService) {
-    @PostMapping("/signup")
+    @PostMapping(value = ["/signup", "/register"])
     fun signup(@Valid @RequestBody request: SignupRequest): ResponseEntity<AuthResponse> =
         ResponseEntity.status(HttpStatus.CREATED).body(authService.signup(request))
 
