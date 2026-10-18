@@ -10,6 +10,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
+import org.springframework.web.servlet.resource.NoResourceFoundException
 
 class ApiException(
     val status: HttpStatus,
@@ -59,6 +60,13 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(ErrorResponse(error = "Bad Request", message = "Malformed request or invalid parameters"))
+    }
+
+    @ExceptionHandler(NoResourceFoundException::class)
+    fun handleNotFound(ex: NoResourceFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(error = "Not Found", message = ex.message ?: "Endpoint not found"))
     }
 
     @ExceptionHandler(Exception::class)
