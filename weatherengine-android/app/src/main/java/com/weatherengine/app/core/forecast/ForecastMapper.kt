@@ -22,6 +22,7 @@ object ForecastMapper {
             "${celsius.roundToInt()}°"
         } else {
             "—"
+
         }
     }
 

@@ -82,3 +82,34 @@ data class PersonaDto(
 data class SetPersonasRequest(
     val personaCodes: List<String>
 )
+
+@Serializable
+data class RecordLocationRequest(
+    val latitude: Double,
+    val longitude: Double,
+    val accuracyMeters: Float? = null,
+    val timestampMs: Long? = null
+)
+
+@Serializable
+data class PredictiveWeatherAlertDto(
+    val targetHour: Int,
+    val targetTimeFormatted: String,
+    val predictedLatitude: Double,
+    val predictedLongitude: Double,
+    val alertType: String,
+    val headline: String,
+    val message: String,
+    val severity: String = "WARNING"
+)
+
+@Serializable
+data class LocationRecordResponse(
+    val status: String,
+    val isNewSlice: Boolean,
+    val latitude: Double,
+    val longitude: Double,
+    val recordedAt: String,
+    val predictedAlert: PredictiveWeatherAlertDto? = null
+)
+
