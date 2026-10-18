@@ -34,4 +34,23 @@ class AlertNotificationManagerTest {
         }
         org.junit.Assert.assertEquals(2, activeCount)
     }
+
+    @Test
+    fun testPredictiveWeatherAlertDto_creationAndFields() {
+        val alert = com.weatherengine.app.data.model.PredictiveWeatherAlertDto(
+            targetHour = 17,
+            targetTimeFormatted = "5:00 PM",
+            predictedLatitude = 28.6139,
+            predictedLongitude = 77.2090,
+            alertType = "RAIN",
+            headline = "🌧️ Rain Forecast for 5:00 PM",
+            message = "Heavy rain expected on your commute. Carry an umbrella!",
+            severity = "CRITICAL"
+        )
+
+        org.junit.Assert.assertEquals(17, alert.targetHour)
+        org.junit.Assert.assertEquals("RAIN", alert.alertType)
+        org.junit.Assert.assertEquals("CRITICAL", alert.severity)
+    }
 }
+

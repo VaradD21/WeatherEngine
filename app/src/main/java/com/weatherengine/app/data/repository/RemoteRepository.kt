@@ -55,6 +55,14 @@ interface WeatherEngineRepository {
         schoolEnd: String?
     ): NetworkResult<HomepageResponse> =
         getHomepage(lat, lon)
+    suspend fun recordLocationHistory(
+        lat: Double,
+        lon: Double,
+        accuracyMeters: Float? = null
+    ): NetworkResult<com.weatherengine.app.data.model.LocationRecordResponse> =
+        NetworkResult.Failure(FailureKind.Client, "Not implemented")
+    suspend fun getPredictiveAlerts(): NetworkResult<List<com.weatherengine.app.data.model.PredictiveWeatherAlertDto>> =
+        NetworkResult.Success(emptyList())
 }
 
 class RemoteRepository(
@@ -155,6 +163,29 @@ class RemoteRepository(
             settingsStore.saveCloudPreferences(result.data)
         }
         return result
+    }
+
+    override suspend fun recordLocationHistory(
+        lat: Double,
+        lon: Double,
+        accuracyMeters: Float?
+    ): NetworkResult<com.weatherengine.app.data.model.LocationRecordResponse> {
+        return safeApiCall(isProtected = true) {
+            apiServiceProvider().recordLocationHistory(
+                com.weatherengine.app.data.model.RecordLocationRequest(
+                    latitude = lat,
+                    longitude = lon,
+                    accuracyMeters = accuracyMeters,
+                    timestampMs = System.currentTimeMillis()
+                )
+            )
+        }
+    }
+
+    override suspend fun getPredictiveAlerts(): NetworkResult<List<com.weatherengine.app.data.model.PredictiveWeatherAlertDto>> {
+        return safeApiCall(isProtected = true) {
+            apiServiceProvider().getPredictiveAlerts()
+        }
     }
 
     private suspend fun <T> safeApiCall(

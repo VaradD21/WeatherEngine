@@ -140,6 +140,21 @@ object AlertNotificationManager {
         }
     }
 
+    fun postPredictiveWeatherAlert(
+        context: Context,
+        title: String,
+        message: String,
+        alertKey: String
+    ) {
+        postNotificationIfFresh(
+            context = context,
+            key = "predictive_$alertKey",
+            id = 1008,
+            title = title,
+            message = message
+        )
+    }
+
     private fun postNotificationIfFresh(
         context: Context,
         key: String,

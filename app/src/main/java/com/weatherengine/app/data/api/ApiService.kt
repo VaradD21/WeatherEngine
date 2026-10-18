@@ -105,4 +105,13 @@ interface ApiService {
     suspend fun updatePreferences(
         @Body request: UserPreferencesDto
     ): Response<UserPreferencesDto>
+
+    @POST("api/users/me/location-history")
+    suspend fun recordLocationHistory(
+        @Body request: com.weatherengine.app.data.model.RecordLocationRequest
+    ): Response<com.weatherengine.app.data.model.LocationRecordResponse>
+
+    @GET("api/users/me/location-history/predictive-alerts")
+    suspend fun getPredictiveAlerts(): Response<List<com.weatherengine.app.data.model.PredictiveWeatherAlertDto>>
 }
+
