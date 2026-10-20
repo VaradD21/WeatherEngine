@@ -1,5 +1,6 @@
 package com.weatherengine.backend.alert
 
+import com.weatherengine.backend.common.roundForLog
 import com.weatherengine.backend.user.UserHealthProfile
 import com.weatherengine.backend.user.UserHealthProfileRepository
 import com.weatherengine.backend.weather.WeatherBundleDto
@@ -39,9 +40,6 @@ class AlertSchedulerService(
             val lat = location.latitude.toDouble()
             val lon = location.longitude.toDouble()
 
-            val latKey = String.format(Locale.US, "%.2f", lat)
-            val lonKey = String.format(Locale.US, "%.2f", lon)
-
             val bundle = try {
                 weatherCacheService.getCachedWeatherBundle(lat, lon)
             } catch (ex: Exception) {
@@ -61,8 +59,8 @@ class AlertSchedulerService(
                 logger.info(
                     "Dispatching {} alert for location ({}, {}) to subscription {}",
                     triggeredType,
-                    latKey,
-                    lonKey,
+                    lat.roundForLog(),
+                    lon.roundForLog(),
                     sub.id
                 )
                 alertLogRepository.save(

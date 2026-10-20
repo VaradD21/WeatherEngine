@@ -2,6 +2,7 @@ package com.weatherengine.backend.weather
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.weatherengine.backend.common.roundForLog
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -58,7 +59,7 @@ class WeatherApiClient(
                 .retrieve()
                 .body(WeatherApiResponse::class.java)
         } catch (ex: Exception) {
-            logger.warn("WeatherAPI request failed for ({}, {}): {}", lat, lon, ex.message)
+            logger.warn("WeatherAPI request failed for ({}, {}): {}", lat.roundForLog(), lon.roundForLog(), ex.message)
             null
         }
     }

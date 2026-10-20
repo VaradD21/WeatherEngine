@@ -65,4 +65,24 @@ app:
 
 logging:
   level:
+    com.weatherengine: ${LOGGING_LEVEL_APP:INFO}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+logging:
+  level:
     com.weatherengine: DEBUG
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+logging:
+  level:
+    com.weatherengine: INFO

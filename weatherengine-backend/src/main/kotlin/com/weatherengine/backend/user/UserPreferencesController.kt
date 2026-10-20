@@ -1,7 +1,10 @@
 package com.weatherengine.backend.user
 
 import com.weatherengine.backend.auth.AuthenticatedUser
+import com.weatherengine.backend.common.ApiException
+import com.weatherengine.backend.weather.ParentPersonaRules
 import jakarta.validation.Valid
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.transaction.annotation.Transactional
@@ -31,6 +34,22 @@ class UserPreferencesController(
         @AuthenticationPrincipal user: AuthenticatedUser,
         @Valid @RequestBody dto: UserPreferencesDto
     ): ResponseEntity<UserPreferencesDto> {
+        // Validate school hours BEFORE touching the DB.
+        // ParentPersonaRules.parseAndValidateSchoolHours throws IllegalArgumentException
+        // with a clear message on bad format or end <= start.
+        try {
+            ParentPersonaRules.parseAndValidateSchoolHours(dto.schoolStart, dto.schoolEnd)
+        } catch (ex: IllegalArgumentException) {
+            throw ApiException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid school hours")
+        }
+
+        // Validate enum values and widget codes.
+        try {
+            dto.validateBusinessRules()
+        } catch (ex: IllegalArgumentException) {
+            throw ApiException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid preferences value")
+        }
+
         val prefs = preferencesRepository.findById(user.userId).orElseGet {
             UserPreferences(userId = user.userId)
         }
@@ -38,8 +57,9 @@ class UserPreferencesController(
         prefs.disabledWidgets = dto.disabledWidgets.filter { it.isNotBlank() }.joinToString(",")
         prefs.defaultScreen = dto.defaultScreen.ifBlank { "home" }
         prefs.temperatureUnit = if (dto.temperatureUnit.equals("FAHRENHEIT", ignoreCase = true)) "FAHRENHEIT" else "CELSIUS"
-        prefs.schoolStart = dto.schoolStart.ifBlank { "08:00" }
-        prefs.schoolEnd = dto.schoolEnd.ifBlank { "15:00" }
+        // Hours are guaranteed valid at this point.
+        prefs.schoolStart = dto.schoolStart
+        prefs.schoolEnd = dto.schoolEnd
         prefs.updatedAt = Instant.now()
 
         val saved = preferencesRepository.save(prefs)

@@ -3,6 +3,7 @@ package com.weatherengine.backend.weather
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.weatherengine.backend.common.ApiException
+import com.weatherengine.backend.common.roundForLog
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
@@ -157,7 +158,7 @@ class OpenMeteoClient(
                 .retrieve()
                 .body(OpenMeteoForecastResponse::class.java)
         } catch (ex: Exception) {
-            logger.error("Failed to fetch forecast from Open-Meteo for ({}, {})", lat, lon, ex)
+            logger.error("Failed to fetch forecast from Open-Meteo for ({}, {})", lat.roundForLog(), lon.roundForLog(), ex)
             throw ApiException(HttpStatus.BAD_GATEWAY, "Upstream weather provider is temporarily unavailable")
         }
 
@@ -180,7 +181,7 @@ class OpenMeteoClient(
                 .retrieve()
                 .body(OpenMeteoAirQualityResponse::class.java)
         } catch (ex: Exception) {
-            logger.warn("Air quality provider call failed for ({}, {}): {}", lat, lon, ex.message)
+            logger.warn("Air quality provider call failed for ({}, {}): {}", lat.roundForLog(), lon.roundForLog(), ex.message)
             null
         }
     }
@@ -201,7 +202,7 @@ class OpenMeteoClient(
                 .retrieve()
                 .body(OpenMeteoMarineResponse::class.java)
         } catch (ex: Exception) {
-            logger.warn("Marine weather provider call returned null/unsupported coordinates for ({}, {}): {}", lat, lon, ex.message)
+            logger.warn("Marine weather provider call returned null/unsupported coordinates for ({}, {}): {}", lat.roundForLog(), lon.roundForLog(), ex.message)
             null
         }
     }

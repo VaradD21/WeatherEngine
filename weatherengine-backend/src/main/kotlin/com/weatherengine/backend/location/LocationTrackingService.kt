@@ -3,6 +3,7 @@ package com.weatherengine.backend.location
 import com.weatherengine.backend.weather.OpenMeteoForecastResponse
 import com.weatherengine.backend.weather.WeatherBundleDto
 import com.weatherengine.backend.weather.WeatherCacheService
+import com.weatherengine.backend.common.roundForLog
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -154,7 +155,7 @@ class LocationTrackingService(
             val bundle = weatherCacheService.getCachedWeatherBundle(targetLat, targetLon)
             inspectForecastForHazards(bundle, targetHour, targetLat, targetLon)
         } catch (ex: Exception) {
-            logger.warn("Could not fetch forecast for predictive location ($targetLat, $targetLon): ${ex.message}")
+            logger.warn("Could not fetch forecast for predictive location (${targetLat.roundForLog()}, ${targetLon.roundForLog()}): ${ex.message}")
             null
         }
     }

@@ -3,64 +3,13 @@ package com.weatherengine.backend.weather
 import com.weatherengine.backend.auth.AuthenticatedUser
 import com.weatherengine.backend.common.ApiException
 import com.weatherengine.backend.persona.PersonaService
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.stereotype.Service
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-
-@Service
-class WeatherCacheService(
-    private val openMeteoClient: OpenMeteoClient,
-    private val weatherApiClient: WeatherApiClient? = null
-) {
-    @Cacheable(
-        value = ["weather-bundle-v3"],
-        key = "'v3:' + T(java.lang.String).format(T(java.util.Locale).US, '%.2f,%.2f', #lat, #lon)"
-    )
-    fun getCachedWeatherBundle(lat: Double, lon: Double): WeatherBundleDto {
-        val forecast = openMeteoClient.fetchForecast(lat, lon)
-        var airQuality = openMeteoClient.fetchAirQuality(lat, lon)
-        val marine = openMeteoClient.fetchMarine(lat, lon)
-
-        if ((airQuality?.current?.usAqi == null) && weatherApiClient?.isConfigured() == true) {
-            val secondary = weatherApiClient.fetchCurrentAndAqi(lat, lon)
-            val epaIndex = secondary?.current?.airQuality?.usEpaIndex
-            val mappedAqi = when (epaIndex) {
-                1 -> 25
-                2 -> 75
-                3 -> 125
-                4 -> 175
-                5 -> 250
-                6 -> 350
-                else -> null
-            }
-            if (mappedAqi != null) {
-                airQuality = OpenMeteoAirQualityResponse(
-                    current = OpenMeteoCurrentAirQuality(
-                        usAqi = mappedAqi,
-                        pm25 = secondary?.current?.airQuality?.pm2_5,
-                        grassPollen = airQuality?.current?.grassPollen,
-                        birchPollen = airQuality?.current?.birchPollen,
-                        alderPollen = airQuality?.current?.alderPollen,
-                        ragweedPollen = airQuality?.current?.ragweedPollen
-                    )
-                )
-            }
-        }
-
-        return WeatherBundleDto(
-            forecast = forecast,
-            airQuality = airQuality,
-            marine = marine,
-            fetchedAtMs = System.currentTimeMillis()
-        )
-    }
-}
 
 @RestController
 @RequestMapping("/api")
@@ -70,6 +19,12 @@ class WeatherController(
     private val widgetBuilder: WidgetBuilder,
     private val preferencesRepository: com.weatherengine.backend.user.UserPreferencesRepository? = null
 ) {
+    private val logger = org.slf4j.LoggerFactory.getLogger(WeatherController::class.java)
+
+    companion object {
+        private const val DEFAULT_SCHOOL_START = "08:00"
+        private const val DEFAULT_SCHOOL_END = "15:00"
+    }
 
     @GetMapping("/weather")
     fun getWeather(
@@ -89,15 +44,38 @@ class WeatherController(
         @RequestParam(name = "schoolEnd", defaultValue = "15:00") schoolEnd: String
     ): ResponseEntity<HomepageResponse> {
         validateCoordinates(lat, lon)
-        
-        val userPrefs = preferencesRepository?.findById(principal.userId)?.orElse(null)
-        val effectiveStart = if (schoolStart == "08:00" && !userPrefs?.schoolStart.isNullOrBlank()) userPrefs!!.schoolStart else schoolStart
-        val effectiveEnd = if (schoolEnd == "15:00" && !userPrefs?.schoolEnd.isNullOrBlank()) userPrefs!!.schoolEnd else schoolEnd
 
+        // Validate incoming request parameters first (400 if client supplied invalid query params)
         try {
-            ParentPersonaRules.parseAndValidateSchoolHours(effectiveStart, effectiveEnd)
+            ParentPersonaRules.parseAndValidateSchoolHours(schoolStart, schoolEnd)
         } catch (ex: IllegalArgumentException) {
             throw ApiException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid school hours")
+        }
+
+        val userPrefs = preferencesRepository?.findById(principal.userId)?.orElse(null)
+
+        // Determine effective hours: if client used default params and user has custom stored hours,
+        // use stored hours. If stored hours in DB are corrupted, fall back to defaults with warning.
+        val (effectiveStart, effectiveEnd) = if (
+            schoolStart == DEFAULT_SCHOOL_START &&
+            schoolEnd == DEFAULT_SCHOOL_END &&
+            userPrefs != null &&
+            (!userPrefs.schoolStart.isNullOrBlank() || !userPrefs.schoolEnd.isNullOrBlank())
+        ) {
+            val s = userPrefs.schoolStart.ifBlank { DEFAULT_SCHOOL_START }
+            val e = userPrefs.schoolEnd.ifBlank { DEFAULT_SCHOOL_END }
+            try {
+                ParentPersonaRules.parseAndValidateSchoolHours(s, e)
+                s to e
+            } catch (ex: IllegalArgumentException) {
+                logger.warn(
+                    "Stored school hours are invalid for user {} (start='{}', end='{}'): {} — falling back to defaults",
+                    principal.userId, s, e, ex.message
+                )
+                DEFAULT_SCHOOL_START to DEFAULT_SCHOOL_END
+            }
+        } else {
+            schoolStart to schoolEnd
         }
 
         val defaultCodes = personaService.getUserWidgetCodes(principal.userId)
