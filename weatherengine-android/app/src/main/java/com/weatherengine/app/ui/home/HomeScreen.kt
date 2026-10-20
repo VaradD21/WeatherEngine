@@ -28,6 +28,27 @@ import com.weatherengine.app.ui.home.components.RenderPersonaWidget
 import com.weatherengine.app.ui.theme.AmberWarning
 import com.weatherengine.app.ui.theme.AuroraBackground
 
+enum class WidgetRenderSource {
+    BACKEND,
+    LOCAL_PERSONA
+}
+
+/**
+ * Resolves which widget source to display in the UI:
+ * - If authenticated and backend content is ready, render backend widgets.
+ * - Otherwise (guest, or authenticated while loading/error), render on-device persona widgets
+ *   so the dashboard is never blank and duplicates are never shown.
+ */
+fun resolveWidgetSource(
+    isAuthenticated: Boolean,
+    homeUiState: HomeUiState
+): WidgetRenderSource =
+    if (isAuthenticated && homeUiState is HomeUiState.Content) {
+        WidgetRenderSource.BACKEND
+    } else {
+        WidgetRenderSource.LOCAL_PERSONA
+    }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -245,13 +266,17 @@ fun HomeScreen(
                                     }
                                 }
 
-                                items(activePersonaWidgets, key = { "persona_${it.name}" }) { widgetType ->
-                                    RenderPersonaWidget(widgetType = widgetType, forecast = forecast)
-                                }
-
-                                if (homeUiState is HomeUiState.Content) {
-                                    items((homeUiState as HomeUiState.Content).widgets, key = { "widget_${it.type}" }) { widget ->
-                                        RenderDashboardWidget(widget = widget)
+                                when (resolveWidgetSource(isAuthenticated, homeUiState)) {
+                                    WidgetRenderSource.BACKEND -> {
+                                        val backendWidgets = (homeUiState as HomeUiState.Content).widgets
+                                        items(backendWidgets, key = { "widget_${it.type}" }) { widget ->
+                                            RenderDashboardWidget(widget = widget)
+                                        }
+                                    }
+                                    WidgetRenderSource.LOCAL_PERSONA -> {
+                                        items(activePersonaWidgets, key = { "persona_${it.name}" }) { widgetType ->
+                                            RenderPersonaWidget(widgetType = widgetType, forecast = forecast)
+                                        }
                                     }
                                 }
                             }

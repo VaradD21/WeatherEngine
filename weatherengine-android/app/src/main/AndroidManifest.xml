@@ -4,7 +4,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!--
@@ -35,7 +34,6 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.weatherengine.app.ACTION_UPDATE_WEATHER" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
@@ -47,7 +45,6 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.weatherengine.app.ACTION_UPDATE_WEATHER" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
@@ -59,11 +56,19 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.weatherengine.app.ACTION_UPDATE_WEATHER" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/aqi_alert_widget_info" />
+        </receiver>
+
+        <!-- Internal unexported receiver for custom widget update events -->
+        <receiver
+            android:name=".widget.WeatherUpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.weatherengine.app.ACTION_UPDATE_WEATHER" />
+            </intent-filter>
         </receiver>
     </application>
 

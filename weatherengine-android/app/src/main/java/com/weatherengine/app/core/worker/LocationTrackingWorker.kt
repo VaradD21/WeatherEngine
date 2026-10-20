@@ -12,6 +12,13 @@ import com.weatherengine.app.data.location.AndroidLocationProvider
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
+/**
+ * Background worker for periodic location history logging.
+ *
+ * TODO (REL-02/REL-07): The backend currently does not expose an active /api/users/me/location-history
+ * endpoint. This worker is deactivated and explicitly canceled on app start to prevent unnecessary
+ * background wakeups and battery drain. Re-enable when the backend endpoint is fully deployed.
+ */
 class LocationTrackingWorker(
     appContext: Context,
     workerParams: WorkerParameters
@@ -64,8 +71,16 @@ class LocationTrackingWorker(
     }
 
     companion object {
-        private const val UNIQUE_WORK_NAME = "weatherengine_hourly_location_tracking"
+        const val UNIQUE_WORK_NAME = "weatherengine_hourly_location_tracking"
 
+        /**
+         * Cancels any previously enqueued periodic location tracking work.
+         */
+        fun cancelWork(context: Context) {
+            WorkManager.getInstance(context).cancelUniqueWork(UNIQUE_WORK_NAME)
+        }
+
+        // Kept for future reference when backend endpoint is ready
         fun enqueueHourly(context: Context) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)

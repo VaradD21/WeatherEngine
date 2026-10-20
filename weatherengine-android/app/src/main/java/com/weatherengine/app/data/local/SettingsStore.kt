@@ -12,13 +12,19 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "weather_engine_settings")
 
-open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) {
+open class SettingsStore(
+    private val dataStore: DataStore<Preferences>? = null,
+    private val secureStorage: SecureTokenStorage? = null
+) {
 
     companion object {
         const val CURRENT_FORECAST_SCHEMA_VERSION = 2
@@ -76,7 +82,48 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
             }
         } ?: kotlinx.coroutines.flow.flowOf(emptyPreferences())
 
-    open val tokenFlow: Flow<String?> = safePreferences.map { it[KEY_TOKEN] }
+    private val _secureTokenFlow = MutableStateFlow<String?>(null)
+
+    init {
+        _secureTokenFlow.value = try {
+            secureStorage?.getToken()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Migrates legacy plaintext token stored in DataStore to secure storage.
+     * Deletes the legacy token from DataStore upon migration.
+     * On corruption or KeyStore error, clears corrupt state to force re-login safely.
+     */
+    open suspend fun migrateTokenIfNeeded() {
+        if (secureStorage == null || dataStore == null) return
+        try {
+            val prefs = dataStore.data.first()
+            val legacyToken = prefs[KEY_TOKEN]
+            if (!legacyToken.isNullOrBlank()) {
+                secureStorage.saveToken(legacyToken)
+                _secureTokenFlow.value = secureStorage.getToken()
+                dataStore.edit { it.remove(KEY_TOKEN) }
+            } else if (_secureTokenFlow.value == null) {
+                _secureTokenFlow.value = secureStorage.getToken()
+            }
+        } catch (_: Exception) {
+            try {
+                secureStorage.clearToken()
+                dataStore.edit { it.remove(KEY_TOKEN) }
+            } catch (_: Exception) {}
+            _secureTokenFlow.value = null
+        }
+    }
+
+    open val tokenFlow: Flow<String?> = if (secureStorage != null) {
+        _secureTokenFlow.asStateFlow()
+    } else {
+        safePreferences.map { it[KEY_TOKEN] }
+    }
+
     open val baseUrlFlow: Flow<String> = safePreferences.map { it[KEY_BASE_URL] ?: DEFAULT_BASE_URL }
     open val manualLatFlow: Flow<Double> = safePreferences.map { it[KEY_MANUAL_LAT] ?: DEFAULT_LAT }
     open val manualLonFlow: Flow<Double> = safePreferences.map { it[KEY_MANUAL_LON] ?: DEFAULT_LON }
@@ -94,19 +141,43 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
     }
 
     open suspend fun saveAuth(token: String, email: String) {
+        if (secureStorage != null) {
+            try {
+                secureStorage.saveToken(token)
+                _secureTokenFlow.value = token
+            } catch (_: Exception) {
+                _secureTokenFlow.value = null
+            }
+        }
         dataStore?.edit { prefs ->
-            prefs[KEY_TOKEN] = token
+            if (secureStorage == null) {
+                prefs[KEY_TOKEN] = token
+            } else {
+                prefs.remove(KEY_TOKEN) // Ensure plaintext token is never stored in DataStore
+            }
             prefs[KEY_EMAIL] = email
         }
     }
 
     open suspend fun clearToken() {
+        if (secureStorage != null) {
+            try {
+                secureStorage.clearToken()
+            } catch (_: Exception) {}
+            _secureTokenFlow.value = null
+        }
         dataStore?.edit { prefs ->
             prefs.remove(KEY_TOKEN)
         }
     }
 
     open suspend fun clearAll() {
+        if (secureStorage != null) {
+            try {
+                secureStorage.clearToken()
+            } catch (_: Exception) {}
+            _secureTokenFlow.value = null
+        }
         dataStore?.edit { prefs ->
             prefs.remove(KEY_TOKEN)
             prefs.remove(KEY_EMAIL)

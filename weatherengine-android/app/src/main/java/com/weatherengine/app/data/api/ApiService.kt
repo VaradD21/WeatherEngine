@@ -106,6 +106,7 @@ interface ApiService {
         @Body request: UserPreferencesDto
     ): Response<UserPreferencesDto>
 
+    // TODO (REL-02): Unused until backend implements /api/users/me/location-history
     @POST("api/users/me/location-history")
     suspend fun recordLocationHistory(
         @Body request: com.weatherengine.app.data.model.RecordLocationRequest

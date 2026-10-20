@@ -165,6 +165,7 @@ class RemoteRepository(
         return result
     }
 
+    // TODO (REL-02): Unused until backend implements /api/users/me/location-history
     override suspend fun recordLocationHistory(
         lat: Double,
         lon: Double,

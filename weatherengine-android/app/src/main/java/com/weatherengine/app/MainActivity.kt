@@ -41,7 +41,7 @@ class WeatherEngineApp : Application() {
     override fun onCreate() {
         super.onCreate()
         appContainer = AppContainer(this)
-        com.weatherengine.app.core.worker.LocationTrackingWorker.enqueueHourly(this)
+        com.weatherengine.app.core.worker.LocationTrackingWorker.cancelWork(this)
     }
 }
 

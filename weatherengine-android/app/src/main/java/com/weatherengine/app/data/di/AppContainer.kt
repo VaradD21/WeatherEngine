@@ -23,7 +23,8 @@ import java.util.concurrent.TimeUnit
 
 class AppContainer(context: Context) {
 
-    val settingsStore: SettingsStore = SettingsStore(context.dataStore)
+    private val secureStorage = com.weatherengine.app.data.local.KeystoreTokenStorage(context)
+    val settingsStore: SettingsStore = SettingsStore(context.dataStore, secureStorage)
 
     private var currentToken: String? = null
     private var currentBaseUrl: String = SettingsStore.DEFAULT_BASE_URL
@@ -31,6 +32,9 @@ class AppContainer(context: Context) {
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
+        applicationScope.launch {
+            settingsStore.migrateTokenIfNeeded()
+        }
         applicationScope.launch {
             settingsStore.tokenFlow.collect { token ->
                 currentToken = token

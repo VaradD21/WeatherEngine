@@ -37,7 +37,7 @@ class WeatherAppWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
-        const val ACTION_UPDATE_WEATHER = "com.weatherengine.app.ACTION_UPDATE_WEATHER"
+        const val ACTION_UPDATE_WEATHER = WeatherUpdateReceiver.ACTION_UPDATE_WEATHER
 
         fun updateWidgetView(
             context: Context,
