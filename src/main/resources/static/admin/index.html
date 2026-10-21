@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeatherEngine — Test & Simulation Console</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">🌤️</div>
+        <div>
+          <h1>WeatherEngine <span>Admin & Test Console</span></h1>
+          <p class="subtitle">Location Weather Simulator • AQI & Parameter Overrides • Notification Lab</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="status-pill status-online" id="serverStatusBadge">● Backend Online</span>
+        <span class="override-counter" id="activeOverrideCount">0 Active Overrides</span>
+        <button class="btn btn-danger btn-sm" id="btnGlobalReset" title="Clear all active overrides and flush cache">Reset to Live</button>
+      </div>
+    </header>
+
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="tab-simulator">🎯 Location Weather Simulator</button>
+      <button class="tab-btn" data-tab="tab-notifications">🔔 Notification & Alert Lab</button>
+      <button class="tab-btn" data-tab="tab-inspector">🔍 Live API Inspector</button>
+      <button class="tab-btn" data-tab="tab-users">👥 Registered Users</button>
+    </nav>
+
+    <main class="app-main">
+      <!-- TAB 1: LOCATION SIMULATOR -->
+      <section id="tab-simulator" class="tab-content active">
+        <div class="grid-2col">
+          <div class="card">
+            <div class="card-header">
+              <h2>1. Choose Target Location</h2>
+            </div>
+            <div class="card-body">
+              <div class="city-chips">
+                <button class="chip" data-lat="28.6139" data-lon="77.2090">Delhi</button>
+                <button class="chip" data-lat="19.0760" data-lon="72.8777">Mumbai</button>
+                <button class="chip" data-lat="40.7128" data-lon="-74.0060">New York</button>
+                <button class="chip" data-lat="51.5074" data-lon="-0.1278">London</button>
+                <button class="chip" data-lat="35.6762" data-lon="139.6503">Tokyo</button>
+                <button class="chip chip-accent" id="btnBrowserLoc">📍 Use My GPS</button>
+              </div>
+
+              <div class="form-row mt-3">
+                <div class="form-group">
+                  <label for="inputLat">Latitude</label>
+                  <input type="number" step="0.0001" id="inputLat" value="28.6139">
+                </div>
+                <div class="form-group">
+                  <label for="inputLon">Longitude</label>
+                  <input type="number" step="0.0001" id="inputLon" value="77.2090">
+                </div>
+                <div class="form-group">
+                  <label for="inputRadius">Radius (km)</label>
+                  <input type="number" step="1" id="inputRadius" value="10">
+                </div>
+              </div>
+
+              <div class="form-group mt-2">
+                <label for="selectUser">Target User (Optional)</label>
+                <select id="selectUser">
+                  <option value="">All Users at this location (Global Location Override)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="card-header border-top">
+              <h2>2. One-Click Test Scenario Presets</h2>
+            </div>
+            <div class="card-body">
+              <div class="preset-grid">
+                <button class="preset-card preset-danger" data-preset="HAZARDOUS_AQI_1000">
+                  <div class="preset-icon">☣️</div>
+                  <div class="preset-title">Hazardous AQI 1000</div>
+                  <div class="preset-desc">AQI 1000 • PM2.5 480 • Smog • High Pollen</div>
+                </button>
+                <button class="preset-card preset-warning" data-preset="SEVERE_THUNDERSTORM">
+                  <div class="preset-icon">⚡</div>
+                  <div class="preset-title">Severe Thunderstorm</div>
+                  <div class="preset-desc">WMO 95 • 75 km/h Wind • Torrential Rain</div>
+                </button>
+                <button class="preset-card preset-heat" data-preset="HEAT_WAVE_45C">
+                  <div class="preset-icon">🔥</div>
+                  <div class="preset-title">Heat Wave 45°C</div>
+                  <div class="preset-desc">Temp 45°C • Feels 49.5°C • UV 12</div>
+                </button>
+                <button class="preset-card preset-neutral" data-preset="DENSE_FOG">
+                  <div class="preset-icon">🌫️</div>
+                  <div class="preset-title">Dense Fog 150m</div>
+                  <div class="preset-desc">WMO 45 • Vis 150m • 98% Humidity</div>
+                </button>
+                <button class="preset-card preset-blue" data-preset="MARINE_GALE">
+                  <div class="preset-icon">🌊</div>
+                  <div class="preset-title">Marine Storm</div>
+                  <div class="preset-desc">6.5m Waves • Gale Wind • Rough Sea</div>
+                </button>
+                <button class="preset-card preset-pollen" data-preset="POLLEN_SPIKE">
+                  <div class="preset-icon">🌸</div>
+                  <div class="preset-title">Pollen Surge</div>
+                  <div class="preset-desc">Grass/Birch 140+ • High Allergy Risk</div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2>3. Custom Parameter Fine-Tuning</h2>
+            </div>
+            <div class="card-body">
+              <form id="overrideForm">
+                <div class="param-section">
+                  <h3>Air Quality & Health Parameters</h3>
+                  <div class="slider-group">
+                    <div class="slider-header">
+                      <label for="valAqi">US AQI (Air Quality Index)</label>
+                      <input type="number" id="numAqi" min="0" max="1500" value="1000" class="num-box">
+                    </div>
+                    <input type="range" id="valAqi" min="0" max="1200" value="1000" class="range-slider">
+                    <div class="slider-ticks"><span>0 (Good)</span><span>100 (Moderate)</span><span>300 (Hazardous)</span><span>1000+ (Disaster)</span></div>
+                  </div>
+
+                  <div class="form-row mt-2">
+                    <div class="form-group">
+                      <label for="valPm25">PM2.5 (µg/m³)</label>
+                      <input type="number" step="0.1" id="valPm25" value="480">
+                    </div>
+                    <div class="form-group">
+                      <label for="valGrassPollen">Grass Pollen</label>
+                      <input type="number" step="1" id="valGrassPollen" value="85">
+                    </div>
+                    <div class="form-group">
+                      <label for="valBirchPollen">Birch Pollen</label>
+                      <input type="number" step="1" id="valBirchPollen" value="110">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="param-section mt-3">
+                  <h3>Weather & Atmospheric Conditions</h3>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="valTemp">Temperature (°C)</label>
+                      <input type="number" step="0.5" id="valTemp" value="32">
+                    </div>
+                    <div class="form-group">
+                      <label for="valFeels">Feels Like (°C)</label>
+                      <input type="number" step="0.5" id="valFeels" value="38">
+                    </div>
+                    <div class="form-group">
+                      <label for="valHumidity">Humidity (%)</label>
+                      <input type="number" min="0" max="100" id="valHumidity" value="75">
+                    </div>
+                  </div>
+
+                  <div class="form-row mt-2">
+                    <div class="form-group">
+                      <label for="valWeatherCode">WMO Weather Condition</label>
+                      <select id="valWeatherCode">
+                        <option value="0">0 — Clear Sky</option>
+                        <option value="1">1 — Mainly Clear</option>
+                        <option value="2">2 — Partly Cloudy</option>
+                        <option value="3">3 — Overcast</option>
+                        <option value="45" selected>45 — Fog / Dense Smog</option>
+                        <option value="61">61 — Slight Rain</option>
+                        <option value="65">65 — Heavy Rain</option>
+                        <option value="75">75 — Heavy Snow</option>
+                        <option value="95">95 — Severe Thunderstorm</option>
+                        <option value="99">99 — Severe Hailstorm</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label for="valUv">UV Index (0-15)</label>
+                      <input type="number" step="0.5" min="0" max="16" id="valUv" value="3">
+                    </div>
+                  </div>
+
+                  <div class="form-row mt-2">
+                    <div class="form-group">
+                      <label for="valWind">Wind (km/h)</label>
+                      <input type="number" step="1" id="valWind" value="15">
+                    </div>
+                    <div class="form-group">
+                      <label for="valPrecip">Precipitation (mm)</label>
+                      <input type="number" step="0.1" id="valPrecip" value="0.0">
+                    </div>
+                    <div class="form-group">
+                      <label for="valPrecipProb">Precip Prob (%)</label>
+                      <input type="number" min="0" max="100" id="valPrecipProb" value="10">
+                    </div>
+                  </div>
+
+                  <div class="form-row mt-2">
+                    <div class="form-group">
+                      <label for="valWaveHeight">Marine Wave Height (m)</label>
+                      <input type="number" step="0.1" id="valWaveHeight" placeholder="1.2">
+                    </div>
+                    <div class="form-group">
+                      <label for="valSeaTemp">Sea Temp (°C)</label>
+                      <input type="number" step="0.5" id="valSeaTemp" placeholder="24.0">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-actions mt-4">
+                  <button type="submit" class="btn btn-primary" id="btnSaveCustom">Apply Custom Simulation</button>
+                  <button type="button" class="btn btn-secondary" id="btnInspectSimulated">Preview API Response</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-4">
+          <div class="card-header flex-between">
+            <h2>Active Overrides</h2>
+            <button class="btn btn-secondary btn-sm" id="btnRefreshOverrides">Refresh List</button>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-container">
+              <table class="data-table" id="overridesTable">
+                <thead>
+                  <tr>
+                    <th>Label / Preset</th>
+                    <th>Target Coordinates</th>
+                    <th>Radius</th>
+                    <th>AQI</th>
+                    <th>Temp / Feels</th>
+                    <th>Weather Code</th>
+                    <th>Target User</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="overridesTableBody">
+                  <tr><td colspan="8" class="text-center text-muted">No active overrides. Showing live Open-Meteo weather.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: NOTIFICATION LAB -->
+      <section id="tab-notifications" class="tab-content">
+        <div class="grid-2col">
+          <div class="card">
+            <div class="card-header">
+              <h2>Evaluate & Trigger Weather Notifications</h2>
+            </div>
+            <div class="card-body">
+              <p class="text-muted">Simulate and evaluate health and severe weather alert triggers for any user at simulated or live coordinates.</p>
+              <div class="form-row mt-3">
+                <div class="form-group">
+                  <label for="notifLat">Latitude</label>
+                  <input type="number" step="0.0001" id="notifLat" value="28.6139">
+                </div>
+                <div class="form-group">
+                  <label for="notifLon">Longitude</label>
+                  <input type="number" step="0.0001" id="notifLon" value="77.2090">
+                </div>
+                <div class="form-group">
+                  <label for="notifUser">User</label>
+                  <select id="notifUser">
+                    <option value="">Guest (Default Thresholds)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-actions mt-3">
+                <button class="btn btn-primary" id="btnEvalAlerts">Evaluate Alerts</button>
+                <button class="btn btn-accent" id="btnTriggerAlert">Trigger Test Push Alert</button>
+              </div>
+
+              <div class="evaluated-alerts mt-4" id="evaluatedAlertsContainer">
+                <div class="empty-state">Click <strong>Evaluate Alerts</strong> to test rules against current/overridden data.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header flex-between">
+              <h2>Alert Dispatches Log (`alert_log`)</h2>
+              <button class="btn btn-secondary btn-sm" id="btnRefreshAlertLogs">Refresh Log</button>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-container">
+                <table class="data-table" id="alertLogsTable">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Severity</th>
+                      <th>Alert Type</th>
+                      <th>Headline</th>
+                      <th>Coordinates</th>
+                    </tr>
+                  </thead>
+                  <tbody id="alertLogsTableBody">
+                    <tr><td colspan="5" class="text-center text-muted">No alerts logged yet.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: API INSPECTOR -->
+      <section id="tab-inspector" class="tab-content">
+        <div class="card">
+          <div class="card-header flex-between">
+            <h2>Live REST API Inspector</h2>
+            <div class="inspector-controls">
+              <button class="btn btn-secondary btn-sm" id="btnInspectWeatherApi">GET /api/weather</button>
+              <button class="btn btn-secondary btn-sm" id="btnInspectHomepageApi">GET /api/homepage (Widgets)</button>
+              <button class="btn btn-secondary btn-sm" id="btnInspectPredictiveApi">GET Predictive Alerts</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="json-viewer-header">
+              <span id="inspectEndpointLabel">Click any endpoint button above to inspect live output</span>
+              <button class="btn btn-outline btn-xs" id="btnCopyJson">Copy JSON</button>
+            </div>
+            <pre class="json-viewer" id="jsonOutput">/* JSON output will appear here */</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: USERS -->
+      <section id="tab-users" class="tab-content">
+        <div class="card">
+          <div class="card-header flex-between">
+            <h2>Registered Users & Health Thresholds</h2>
+            <button class="btn btn-secondary btn-sm" id="btnRefreshUsers">Refresh Users</button>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-container">
+              <table class="data-table" id="usersTable">
+                <thead>
+                  <tr>
+                    <th>User ID</th>
+                    <th>Email</th>
+                    <th>Username</th>
+                    <th>Active Personas</th>
+                    <th>AQI Threshold</th>
+                    <th>UV Threshold</th>
+                    <th>Alerts</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                  <tr><td colspan="7" class="text-center text-muted">Loading users...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

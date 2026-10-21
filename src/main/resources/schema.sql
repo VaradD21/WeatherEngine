@@ -72,6 +72,13 @@ CREATE TABLE IF NOT EXISTS alert_log (
     sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+ALTER TABLE IF EXISTS alert_log ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE IF EXISTS alert_log ADD COLUMN IF NOT EXISTS headline VARCHAR(255);
+ALTER TABLE IF EXISTS alert_log ADD COLUMN IF NOT EXISTS message TEXT;
+ALTER TABLE IF EXISTS alert_log ADD COLUMN IF NOT EXISTS severity VARCHAR(20) DEFAULT 'WARNING';
+ALTER TABLE IF EXISTS alert_log ADD COLUMN IF NOT EXISTS latitude NUMERIC(9, 6);
+ALTER TABLE IF EXISTS alert_log ADD COLUMN IF NOT EXISTS longitude NUMERIC(9, 6);
+
 CREATE TABLE IF NOT EXISTS user_preferences (
     user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     widget_order TEXT,
@@ -96,4 +103,3 @@ CREATE TABLE IF NOT EXISTS user_location_history (
 
 CREATE INDEX IF NOT EXISTS idx_user_location_history_user_time ON user_location_history (user_id, recorded_at DESC);
 CREATE INDEX IF NOT EXISTS idx_user_location_routine ON user_location_history (user_id, day_of_week, hour_of_day);
-

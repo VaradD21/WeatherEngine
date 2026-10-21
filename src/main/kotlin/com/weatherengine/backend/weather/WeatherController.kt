@@ -3,6 +3,9 @@ package com.weatherengine.backend.weather
 import com.weatherengine.backend.auth.AuthenticatedUser
 import com.weatherengine.backend.common.ApiException
 import com.weatherengine.backend.persona.PersonaService
+import com.weatherengine.backend.testing.WEATHER_CACHE_NAME
+import com.weatherengine.backend.testing.WeatherOverrideService
+import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -12,17 +15,41 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.util.Locale
 
 @Service
 class WeatherCacheService(
     private val openMeteoClient: OpenMeteoClient,
-    private val weatherApiClient: WeatherApiClient? = null
+    private val weatherApiClient: WeatherApiClient? = null,
+    private val weatherOverrideService: WeatherOverrideService? = null,
+    private val cacheManager: CacheManager? = null
 ) {
     @Cacheable(
-        value = ["weather-bundle-v3"],
+        value = [WEATHER_CACHE_NAME],
         key = "'v3:' + T(java.lang.String).format(T(java.util.Locale).US, '%.2f,%.2f', #lat, #lon)"
     )
     fun getCachedWeatherBundle(lat: Double, lon: Double): WeatherBundleDto {
+        val override = weatherOverrideService?.findOverride(lat, lon)
+        if (override != null) {
+            val base = try {
+                fetchRawBundle(lat, lon)
+            } catch (ex: Exception) {
+                weatherOverrideService.createSyntheticBaseBundle(lat, lon)
+            }
+            return weatherOverrideService.applyOverride(base, override)
+        }
+
+        return fetchRawBundle(lat, lon)
+    }
+
+    fun evictCache(lat: Double, lon: Double) {
+        val key = "v3:" + String.format(Locale.US, "%.2f,%.2f", lat, lon)
+        try {
+            cacheManager?.getCache(WEATHER_CACHE_NAME)?.evict(key)
+        } catch (_: Exception) {}
+    }
+
+    private fun fetchRawBundle(lat: Double, lon: Double): WeatherBundleDto {
         val forecast = openMeteoClient.fetchForecast(lat, lon)
         var airQuality = openMeteoClient.fetchAirQuality(lat, lon)
         val marine = openMeteoClient.fetchMarine(lat, lon)
@@ -89,7 +116,7 @@ class WeatherController(
         @RequestParam(name = "schoolEnd", defaultValue = "15:00") schoolEnd: String
     ): ResponseEntity<HomepageResponse> {
         validateCoordinates(lat, lon)
-        
+
         val userPrefs = preferencesRepository?.findById(principal.userId)?.orElse(null)
         val effectiveStart = if (schoolStart == "08:00" && !userPrefs?.schoolStart.isNullOrBlank()) userPrefs!!.schoolStart else schoolStart
         val effectiveEnd = if (schoolEnd == "15:00" && !userPrefs?.schoolEnd.isNullOrBlank()) userPrefs!!.schoolEnd else schoolEnd
@@ -150,4 +177,3 @@ class WeatherController(
         }
     }
 }
-

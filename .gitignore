@@ -1,3 +1,4 @@
+# Environment & Secrets
 app-config.properties
 **/app-config.properties
 !**/app-config.properties.example
@@ -46,6 +47,12 @@ test-results/
 .gemini/
 .antigravity/
 local.properties
+
+# Temporary, Scratch & Agent Planning
+scratch/
+**/scratch/
+.planning/
+**/planning/
 
 # OS, Databases & Logs
 .DS_Store
