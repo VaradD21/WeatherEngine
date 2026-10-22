@@ -1,18 +1,23 @@
 package com.weatherengine.backend.weather
 
+import com.weatherengine.backend.location.LocationRepository
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.util.UUID
 import kotlin.math.roundToInt
 
 @Component
-class WidgetBuilder {
+class WidgetBuilder(
+    private val locationRepository: LocationRepository? = null
+) {
 
     fun buildWidget(
         widgetCode: String,
         bundle: WeatherBundleDto,
         schoolStart: String = "08:00",
-        schoolEnd: String = "15:00"
+        schoolEnd: String = "15:00",
+        userId: UUID? = null
     ): WidgetDto {
         val current = bundle.forecast.current
         val hourly = bundle.forecast.hourly
@@ -58,57 +63,41 @@ class WidgetBuilder {
                     precipProb >= 30 -> "Light showers possible (${precipProb}% chance) during upcoming commute"
                     else -> "Dry road conditions expected for your commute"
                 }
-                mapOf("status" to "active", "message" to msg)
+                mapOf("precipProbabilityNext6h" to precipProb, "roadCondition" to msg)
             }
             "visibility_card" -> {
-                val visMeters = hourly?.visibility?.firstOrNull { it != null }?.roundToInt() ?: 10000
-                val category = when {
-                    visMeters >= 9000 -> "Clear"
-                    visMeters >= 4000 -> "Moderate"
-                    visMeters >= 1000 -> "Low"
-                    else -> "Dense Fog"
+                val visMeters = hourly?.visibility?.filterNotNull()?.firstOrNull() ?: 10000.0
+                val visKm = ((visMeters / 100.0).roundToInt()) / 10.0
+                val status = when {
+                    visKm < 1.0 -> "Dense Fog"
+                    visKm < 4.0 -> "Moderate Fog / Mist"
+                    visKm < 10.0 -> "Hazy"
+                    else -> "Clear Visibility"
                 }
-                mapOf("visibilityMeters" to visMeters, "category" to category)
+                mapOf("visibilityKm" to visKm, "status" to status)
+            }
+            "pollen_card" -> {
+                val grass = aqiCurrent?.grassPollen ?: 0.0
+                val birch = aqiCurrent?.birchPollen ?: 0.0
+                val alder = aqiCurrent?.alderPollen ?: 0.0
+                val ragweed = aqiCurrent?.ragweedPollen ?: 0.0
+                val maxPollen = maxOf(grass, birch, alder, ragweed)
+                val risk = when {
+                    maxPollen >= 50.0 -> "HIGH"
+                    maxPollen >= 15.0 -> "MODERATE"
+                    else -> "LOW"
+                }
+                mapOf("overallRisk" to risk, "grass" to grass, "birch" to birch, "alder" to alder, "ragweed" to ragweed)
             }
             "storm_fog_alert_card" -> {
                 val code = current?.weatherCode ?: 0
-                val stormOrFog = code in setOf(45, 48, 95, 96, 99) || code in 65..67 || code in 82..86
-                val msg = if (stormOrFog) {
-                    "Active weather advisory (WMO code $code) — exercise caution outdoors"
-                } else {
-                    "No storm or fog warnings in effect"
+                val alert = when (code) {
+                    in setOf(95, 96, 99) -> "Active Thunderstorm Warning in effect"
+                    in setOf(45, 48) -> "Dense Fog Advisory — reduce driving speed"
+                    in setOf(61, 63, 65, 80, 81, 82) -> "Heavy Precipitation Advisory"
+                    else -> "No severe storm or fog alerts active"
                 }
-                mapOf("alertActive" to stormOrFog, "conditionCode" to code, "message" to msg)
-            }
-            "pollen_card" -> {
-                val top = listOfNotNull(
-                    aqiCurrent?.grassPollen?.let { "Grass" to it },
-                    aqiCurrent?.birchPollen?.let { "Birch" to it },
-                    aqiCurrent?.alderPollen?.let { "Alder" to it },
-                    aqiCurrent?.ragweedPollen?.let { "Ragweed" to it }
-                ).maxByOrNull { it.second }
-                if (top != null && top.second > 0.0) {
-                    val count = top.second.roundToInt()
-                    val level = when {
-                        count >= 90 -> "Very High"
-                        count >= 50 -> "High"
-                        count >= 20 -> "Moderate"
-                        else -> "Low"
-                    }
-                    mapOf(
-                        "status" to "ok",
-                        "pollenType" to top.first,
-                        "grainsCount" to count,
-                        "level" to level,
-                        "message" to "${top.first} pollen is $level ($count grains/m³)"
-                    )
-                } else {
-                    mapOf(
-                        "status" to "ok",
-                        "level" to "Low",
-                        "message" to "Pollen levels are low or minimal for this region"
-                    )
-                }
+                mapOf("alertMessage" to alert, "weatherCode" to code)
             }
             "best_running_hours_card" -> {
                 val timezone = bundle.forecast.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
@@ -152,9 +141,10 @@ class WidgetBuilder {
                 ParentPersonaRules.computeSevereWeatherCard(hourly, nowLocal)
             }
             "saved_destinations_card" -> {
-                val lat = bundle.forecast.latitude ?: 0.0
-                val lon = bundle.forecast.longitude ?: 0.0
-                TravelerRules.computeSavedDestinationsCard(lat, lon)
+                val savedLocations = if (userId != null && locationRepository != null) {
+                    locationRepository.findByUserId(userId)
+                } else emptyList()
+                TravelerRules.computeSavedDestinationsCard(savedLocations)
             }
             "flight_alert_card" -> {
                 val timezone = bundle.forecast.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
@@ -179,20 +169,19 @@ class WidgetBuilder {
         return WidgetDto(type = widgetCode, data = data)
     }
 
-    private fun aqiCategory(usAqi: Int): String = when {
-        usAqi <= 50 -> "Good"
-        usAqi <= 100 -> "Moderate"
-        usAqi <= 150 -> "Unhealthy for Sensitive Groups"
-        usAqi <= 200 -> "Unhealthy"
-        usAqi <= 300 -> "Very Unhealthy"
+    private fun aqiCategory(aqi: Int): String = when {
+        aqi <= 50 -> "Good"
+        aqi <= 100 -> "Moderate"
+        aqi <= 150 -> "Unhealthy for Sensitive Groups"
+        aqi <= 200 -> "Unhealthy"
+        aqi <= 300 -> "Very Unhealthy"
         else -> "Hazardous"
     }
 
     private fun uvAdvice(uv: Double): String = when {
-        uv < 3.0 -> "Low UV — minimal protection needed"
-        uv < 6.0 -> "Moderate UV — wear sunglasses and SPF 30+"
-        uv < 8.0 -> "High UV — seek shade during midday hours"
-        uv < 11.0 -> "Very High UV — extra sun protection required"
-        else -> "Extreme UV — avoid direct midday sun"
+        uv >= 8 -> "Very High UV risk — minimize midday sun, use SPF 50+"
+        uv >= 6 -> "High UV risk — seek shade, wear hat and sunglasses"
+        uv >= 3 -> "Moderate UV risk — sunscreen recommended during midday"
+        else -> "Low UV risk — minimal sun protection needed"
     }
 }

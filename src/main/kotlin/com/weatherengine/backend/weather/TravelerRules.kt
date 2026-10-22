@@ -1,5 +1,6 @@
 package com.weatherengine.backend.weather
 
+import com.weatherengine.backend.location.Location
 import java.time.LocalDateTime
 import kotlin.math.roundToInt
 
@@ -31,7 +32,6 @@ object TravelerRules {
         val currGusts = current?.windGusts10m ?: 0.0
         val currCode = current?.weatherCode ?: 0
 
-        // Check thunderstorm / snow / gale
         val isStormNow = currCode in setOf(95, 96, 99)
         val isFogNow = currCode in setOf(45, 48)
         val isSnowNow = currCode in setOf(71, 73, 75, 77, 85, 86)
@@ -39,7 +39,7 @@ object TravelerRules {
         if (isStormNow) {
             hasSevereRisk = true
             alertSeverity = "Severe"
-            reasons.add("Active thunderstorm at departure/arrival zone (WMO $currCode)")
+            reasons.add("Thunderstorms active at departure/arrival zone (WMO $currCode)")
         }
 
         if (currGusts >= TravelerConstants.FLIGHT_SEVERE_WIND_GUST_KMH) {
@@ -60,7 +60,6 @@ object TravelerRules {
             reasons.add("Snow / de-icing conditions in effect")
         }
 
-        // Lookahead next 12 hours
         for (i in next12Hours) {
             val code = hourly?.weatherCode?.getOrNull(i) ?: 0
             val gust = hourly?.windGusts10m?.getOrNull(i) ?: 0.0
@@ -70,7 +69,7 @@ object TravelerRules {
             if (code in setOf(95, 96, 99) && reasons.none { it.contains("Thunderstorm") }) {
                 hasSevereRisk = true
                 alertSeverity = "Severe"
-                reasons.add("Thunderstorms expected in upcoming flight window")
+                reasons.add("Thunderstorms active in upcoming flight window")
             }
             if (gust >= TravelerConstants.FLIGHT_SEVERE_WIND_GUST_KMH && reasons.none { it.contains("crosswinds") }) {
                 hasSevereRisk = true
@@ -80,7 +79,7 @@ object TravelerRules {
             if (vis <= TravelerConstants.FLIGHT_DENSE_FOG_VISIBILITY_METERS && reasons.none { it.contains("visibility") }) {
                 hasSevereRisk = true
                 if (alertSeverity == "Normal") alertSeverity = "Caution"
-                reasons.add("Dense fog (<1km visibility) expected")
+                reasons.add("Low visibility dense fog (<1km visibility) expected")
             }
             if (precipProb >= TravelerConstants.FLIGHT_HEAVY_PRECIP_PROBABILITY && reasons.none { it.contains("Heavy rain") }) {
                 if (alertSeverity == "Normal") alertSeverity = "Caution"
@@ -88,7 +87,6 @@ object TravelerRules {
             }
         }
 
-        val status = if (hasSevereRisk) "alert" else "ok"
         val message = when (alertSeverity) {
             "Severe" -> "Severe flight disruption risk: Thunderstorms or extreme conditions detected"
             "Warning" -> "Moderate flight delay risk: High winds or winter weather advisory"
@@ -96,10 +94,20 @@ object TravelerRules {
             else -> "Smooth flying conditions expected. No major weather-related flight delays forecast."
         }
 
+        val delayRisk = when (alertSeverity) {
+            "Severe" -> "High"
+            "Warning", "Caution" -> "Moderate"
+            else -> "Minimal"
+        }
+
+        val primaryReason = if (reasons.isNotEmpty()) reasons.first() else "Calm skies and favorable route visibility"
+
         return mapOf(
             "status" to "ok",
             "hasDisruptionRisk" to hasSevereRisk,
             "severity" to alertSeverity,
+            "delayRisk" to delayRisk,
+            "reason" to primaryReason,
             "message" to message,
             "reasons" to reasons,
             "flightStatus" to if (hasSevereRisk) "Delays Likely" else "On Schedule"
@@ -127,13 +135,11 @@ object TravelerRules {
         val items = mutableListOf<String>()
         val tips = mutableListOf<String>()
 
-        // Rain packing
         if (rainChanceMax >= TravelerConstants.PACKING_RAIN_CHANCE_MIN) {
             items.add("Raincoat or compact umbrella")
             tips.add("Carry a raincoat or umbrella ($rainChanceMax% chance of rain in $locationName)")
         }
 
-        // Temperature packing
         when {
             tempMin <= TravelerConstants.TEMP_FREEZING_MAX -> {
                 items.add("Heavy thermal coat & gloves")
@@ -157,7 +163,6 @@ object TravelerRules {
             }
         }
 
-        // UV / Sun protection
         if (uvMax >= TravelerConstants.PACKING_HIGH_UV_MIN) {
             items.add("Sunglasses & SPF 50+ sunscreen")
             tips.add("High UV index (${((uvMax * 10).roundToInt()) / 10.0}) — pack sunglasses & sun protection")
@@ -187,61 +192,35 @@ object TravelerRules {
     }
 
     fun computeSavedDestinationsCard(
-        currentLocationLat: Double,
-        currentLocationLon: Double
+        savedLocations: List<Location> = emptyList()
     ): Map<String, Any?> {
-        // Curated global popular travel hubs with dynamic contextual hints
-        val destinations = listOf(
-            mapOf(
-                "id" to "dest_lon",
-                "name" to "London",
-                "country" to "UK",
-                "lat" to 51.5074,
-                "lon" to -0.1278,
-                "tempCelsius" to 14.0,
-                "condition" to "Light Rain",
-                "weatherCode" to 61,
-                "packingTip" to "Carry a raincoat in London"
-            ),
-            mapOf(
-                "id" to "dest_par",
-                "name" to "Paris",
-                "country" to "France",
-                "lat" to 48.8566,
-                "lon" to 2.3522,
-                "tempCelsius" to 16.5,
-                "condition" to "Partly Cloudy",
-                "weatherCode" to 2,
-                "packingTip" to "Light jacket & comfortable walking shoes"
-            ),
-            mapOf(
-                "id" to "dest_tok",
-                "name" to "Tokyo",
-                "country" to "Japan",
-                "lat" to 35.6762,
-                "lon" to 139.6503,
-                "tempCelsius" to 19.0,
-                "condition" to "Clear",
-                "weatherCode" to 0,
-                "packingTip" to "Pleasant weather, sunglasses recommended"
-            ),
-            mapOf(
-                "id" to "dest_dxb",
-                "name" to "Dubai",
-                "country" to "UAE",
-                "lat" to 25.2048,
-                "lon" to 55.2708,
-                "tempCelsius" to 33.0,
-                "condition" to "Sunny & Warm",
-                "weatherCode" to 0,
-                "packingTip" to "Breathable clothing & high SPF sunscreen"
+        if (savedLocations.size < 2) {
+            return mapOf(
+                "status" to "empty",
+                "destinations" to emptyList<Map<String, Any?>>(),
+                "message" to "Add saved destinations in Locations tab"
             )
-        )
+        }
+
+        val destinations = savedLocations.map { loc ->
+            mapOf(
+                "id" to (loc.id?.toString() ?: "loc_${loc.label}"),
+                "name" to (loc.label ?: "Saved Location"),
+                "lat" to loc.latitude.toDouble(),
+                "lon" to loc.longitude.toDouble(),
+                "isPrimary" to loc.isPrimary
+            )
+        }
 
         return mapOf(
             "status" to "ok",
             "destinations" to destinations,
-            "message" to "Quick access to 4 popular destinations with live weather"
+            "message" to "${destinations.size} saved destinations"
         )
     }
+
+    fun computeSavedDestinationsCard(
+        currentLocationLat: Double,
+        currentLocationLon: Double
+    ): Map<String, Any?> = computeSavedDestinationsCard(emptyList())
 }

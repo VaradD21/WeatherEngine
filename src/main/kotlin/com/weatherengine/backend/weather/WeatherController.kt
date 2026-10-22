@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.util.Locale
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 @Service
 class WeatherCacheService(
@@ -24,22 +26,27 @@ class WeatherCacheService(
     private val weatherOverrideService: WeatherOverrideService? = null,
     private val cacheManager: CacheManager? = null
 ) {
-    @Cacheable(
-        value = [WEATHER_CACHE_NAME],
-        key = "'v3:' + T(java.lang.String).format(T(java.util.Locale).US, '%.2f,%.2f', #lat, #lon)"
-    )
-    fun getCachedWeatherBundle(lat: Double, lon: Double): WeatherBundleDto {
+
+    fun getCachedWeatherBundle(lat: Double, lon: Double, userId: UUID? = null): WeatherBundleDto {
         val overrideService = weatherOverrideService
-        val override = overrideService?.findOverride(lat, lon)
-        if (override != null && overrideService != null) {
+        val override = overrideService?.findOverride(lat, lon, userId)
+        if (override != null) {
             val base = try {
-                fetchRawBundle(lat, lon)
+                fetchCachedBundle(lat, lon)
             } catch (ex: Exception) {
                 overrideService.createSyntheticBaseBundle(lat, lon)
             }
             return overrideService.applyOverride(base, override)
         }
 
+        return fetchCachedBundle(lat, lon)
+    }
+
+    @Cacheable(
+        value = [WEATHER_CACHE_NAME],
+        key = "'v3:' + T(java.lang.String).format(T(java.util.Locale).US, '%.2f,%.2f', #lat, #lon)"
+    )
+    fun fetchCachedBundle(lat: Double, lon: Double): WeatherBundleDto {
         return fetchRawBundle(lat, lon)
     }
 
@@ -67,15 +74,11 @@ class WeatherCacheService(
                 6 -> 350
                 else -> null
             }
-            if (mappedAqi != null) {
+            if (mappedAqi != null && secondary?.current?.airQuality != null) {
                 airQuality = OpenMeteoAirQualityResponse(
                     current = OpenMeteoCurrentAirQuality(
                         usAqi = mappedAqi,
-                        pm25 = secondary?.current?.airQuality?.pm2_5,
-                        grassPollen = airQuality?.current?.grassPollen,
-                        birchPollen = airQuality?.current?.birchPollen,
-                        alderPollen = airQuality?.current?.alderPollen,
-                        ragweedPollen = airQuality?.current?.ragweedPollen
+                        pm25 = secondary.current.airQuality.pm2_5
                     )
                 )
             }
@@ -84,8 +87,7 @@ class WeatherCacheService(
         return WeatherBundleDto(
             forecast = forecast,
             airQuality = airQuality,
-            marine = marine,
-            fetchedAtMs = System.currentTimeMillis()
+            marine = marine
         )
     }
 }
@@ -99,13 +101,39 @@ class WeatherController(
     private val preferencesRepository: com.weatherengine.backend.user.UserPreferencesRepository? = null
 ) {
 
+    companion object {
+        private val lastForceRefresh = ConcurrentHashMap<String, Long>()
+        private const val FORCE_REFRESH_COOLDOWN_MS = 60_000L
+
+        fun resetRateLimitsForTesting() {
+            lastForceRefresh.clear()
+        }
+    }
+
+    private fun handleForceRefreshRateLimit(userId: UUID?) {
+        val key = userId?.toString() ?: "anonymous"
+        val now = System.currentTimeMillis()
+        val last = lastForceRefresh[key]
+        if (last != null && (now - last) < FORCE_REFRESH_COOLDOWN_MS) {
+            val remaining = ((FORCE_REFRESH_COOLDOWN_MS - (now - last)) / 1000) + 1
+            throw ApiException(HttpStatus.TOO_MANY_REQUESTS, "Force refresh rate limit exceeded. Please wait $remaining seconds.")
+        }
+        lastForceRefresh[key] = now
+    }
+
     @GetMapping("/weather")
     fun getWeather(
         @RequestParam("lat") lat: Double,
-        @RequestParam("lon") lon: Double
+        @RequestParam("lon") lon: Double,
+        @RequestParam(name = "forceRefresh", defaultValue = "false") forceRefresh: Boolean = false,
+        @AuthenticationPrincipal principal: AuthenticatedUser? = null
     ): ResponseEntity<WeatherBundleDto> {
         validateCoordinates(lat, lon)
-        return ResponseEntity.ok(weatherCacheService.getCachedWeatherBundle(lat, lon))
+        if (forceRefresh) {
+            handleForceRefreshRateLimit(principal?.userId)
+            weatherCacheService.evictCache(lat, lon)
+        }
+        return ResponseEntity.ok(weatherCacheService.getCachedWeatherBundle(lat, lon, principal?.userId))
     }
 
     @GetMapping("/homepage")
@@ -113,10 +141,15 @@ class WeatherController(
         @AuthenticationPrincipal principal: AuthenticatedUser,
         @RequestParam("lat") lat: Double,
         @RequestParam("lon") lon: Double,
-        @RequestParam(name = "schoolStart", defaultValue = "08:00") schoolStart: String,
-        @RequestParam(name = "schoolEnd", defaultValue = "15:00") schoolEnd: String
+        @RequestParam(name = "schoolStart", defaultValue = "08:00") schoolStart: String = "08:00",
+        @RequestParam(name = "schoolEnd", defaultValue = "15:00") schoolEnd: String = "15:00",
+        @RequestParam(name = "forceRefresh", defaultValue = "false") forceRefresh: Boolean = false
     ): ResponseEntity<HomepageResponse> {
         validateCoordinates(lat, lon)
+        if (forceRefresh) {
+            handleForceRefreshRateLimit(principal.userId)
+            weatherCacheService.evictCache(lat, lon)
+        }
 
         val userPrefs = preferencesRepository?.findById(principal.userId)?.orElse(null)
         val effectiveStart = if (schoolStart == "08:00" && !userPrefs?.schoolStart.isNullOrBlank()) userPrefs!!.schoolStart else schoolStart
@@ -150,8 +183,10 @@ class WeatherController(
             defaultCodes.filter { it !in disabledSet }
         }
 
-        val bundle = weatherCacheService.getCachedWeatherBundle(lat, lon)
-        val widgets = finalCodes.map { code -> widgetBuilder.buildWidget(code, bundle, effectiveStart, effectiveEnd) }
+        val bundle = weatherCacheService.getCachedWeatherBundle(lat, lon, principal.userId)
+        val widgets = finalCodes.map { code ->
+            widgetBuilder.buildWidget(code, bundle, effectiveStart, effectiveEnd, principal.userId)
+        }
         return ResponseEntity.ok(HomepageResponse(widgets = widgets, preferences = userPrefs?.toDto()))
     }
 

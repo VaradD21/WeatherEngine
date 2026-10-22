@@ -98,9 +98,9 @@ class UserPreferencesTest {
                 current = com.weatherengine.backend.weather.OpenMeteoCurrentWeather(weatherCode = 0, apparentTemperature = 25.0)
             )
         )
-        every { weatherCacheService.getCachedWeatherBundle(19.07, 72.87) } returns bundle
+        every { weatherCacheService.getCachedWeatherBundle(19.07, 72.87, any()) } returns bundle
 
-        every { widgetBuilder.buildWidget(any(), any(), any(), any()) } answers {
+        every { widgetBuilder.buildWidget(any(), any(), any(), any(), any()) } answers {
             com.weatherengine.backend.weather.WidgetDto(type = firstArg(), data = mapOf("status" to "ok"))
         }
 

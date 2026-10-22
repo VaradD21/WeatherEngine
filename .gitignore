@@ -7,6 +7,11 @@ app-config.properties
 .env.*
 !.env.example
 firebase-service-account.json
+google-services.json
+*.apk
+*.aab
+.cxx/
+captures/
 *.jks
 *.keystore
 *.pem

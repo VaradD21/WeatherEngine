@@ -101,7 +101,18 @@ data class WeatherBundleDto(
     val airQuality: OpenMeteoAirQualityResponse? = null,
     val marine: OpenMeteoMarineResponse? = null,
     val fetchedAtMs: Long = System.currentTimeMillis()
-)
+) {
+    @get:JsonProperty("isStale")
+    val isStale: Boolean
+        get() = (System.currentTimeMillis() - fetchedAtMs) >= 900_000L
+
+    @get:JsonProperty("ttlSeconds")
+    val ttlSeconds: Long
+        get() {
+            val remainingMs = 900_000L - (System.currentTimeMillis() - fetchedAtMs)
+            return if (remainingMs > 0) remainingMs / 1000L else 0L
+        }
+}
 
 data class WidgetDto(
     val type: String,
@@ -206,4 +217,3 @@ class OpenMeteoClient(
         }
     }
 }
-

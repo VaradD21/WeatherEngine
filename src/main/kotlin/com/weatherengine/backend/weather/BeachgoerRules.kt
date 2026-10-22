@@ -110,7 +110,7 @@ object BeachgoerRules {
     }
 
     fun computeTideCard(
-        marine: OpenMeteoMarineResponse?,
+        marine: OpenMeteoMarineResponse? = null,
         nowLocal: LocalDateTime
     ): Map<String, Any?> {
         val todayStr = nowLocal.toLocalDate().toString()
@@ -149,6 +149,8 @@ object BeachgoerRules {
 
         return mapOf(
             "status" to "ok",
+            "estimated" to true,
+            "disclaimer" to "Tide times are estimated based on lunar cycles and should not be used for navigation.",
             "date" to todayStr,
             "nextTideState" to nextTideState,
             "nextTideTime" to nextTideTime,

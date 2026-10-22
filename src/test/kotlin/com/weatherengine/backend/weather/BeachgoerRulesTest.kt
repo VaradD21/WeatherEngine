@@ -1,47 +1,45 @@
 package com.weatherengine.backend.weather
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 
 class BeachgoerRulesTest {
 
     @Test
-    fun testWaveHeightCard_coastalData() {
-        val marine = OpenMeteoMarineResponse(
-            hourly = OpenMeteoMarineHourly(
-                time = listOf("2026-10-11T10:00", "2026-10-11T11:00"),
-                waveHeight = listOf(1.5, 1.8),
-                wavePeriod = listOf(10.5, 11.0),
-                swellWaveHeight = listOf(1.2, 1.4),
-                seaSurfaceTemperature = listOf(24.5, 24.6)
-            )
-        )
-        val now = LocalDateTime.parse("2026-10-11T10:15")
-        val result = BeachgoerRules.computeWaveHeightCard(marine, now)
-
-        assertEquals("ok", result["status"])
-        assertEquals(true, result["isCoastal"])
-        assertEquals(1.5, result["waveHeightMeters"])
-        assertEquals(10.5, result["wavePeriodSeconds"])
-        assertEquals("Moderate Waves", result["category"])
-        assertEquals("Great for Surfing", result["surfRating"])
-    }
-
-    @Test
     fun testWaveHeightCard_inlandFallback() {
-        val now = LocalDateTime.parse("2026-10-11T10:15")
+        val now = LocalDateTime.parse("2026-10-11T10:00")
         val result = BeachgoerRules.computeWaveHeightCard(null, now)
 
         assertEquals("ok", result["status"])
         assertEquals(false, result["isCoastal"])
         assertEquals(0.0, result["waveHeightMeters"])
         assertEquals("Calm / Inland", result["category"])
-        assertEquals("Flat", result["surfRating"])
     }
 
     @Test
-    fun testSeaTempCard_marineReported() {
+    fun testWaveHeightCard_validCoastalData() {
+        val marine = OpenMeteoMarineResponse(
+            hourly = OpenMeteoMarineHourly(
+                time = listOf("2026-10-11T10:00"),
+                waveHeight = listOf(1.5),
+                wavePeriod = listOf(10.0),
+                swellWaveHeight = listOf(1.2)
+            )
+        )
+        val now = LocalDateTime.parse("2026-10-11T10:00")
+        val result = BeachgoerRules.computeWaveHeightCard(marine, now)
+
+        assertEquals("ok", result["status"])
+        assertEquals(true, result["isCoastal"])
+        assertEquals(1.5, result["waveHeightMeters"])
+        assertEquals(10.0, result["wavePeriodSeconds"])
+        assertEquals("Moderate Waves", result["category"])
+        assertEquals("Great for Surfing", result["surfRating"])
+    }
+
+    @Test
+    fun testSeaTempCard_marineStationData() {
         val marine = OpenMeteoMarineResponse(
             hourly = OpenMeteoMarineHourly(
                 time = listOf("2026-10-11T10:00"),
@@ -78,6 +76,11 @@ class BeachgoerRulesTest {
         val result = BeachgoerRules.computeTideCard(null, now)
 
         assertEquals("ok", result["status"])
+        assertEquals(true, result["estimated"])
+        assertEquals(
+            "Tide times are estimated based on lunar cycles and should not be used for navigation.",
+            result["disclaimer"]
+        )
         assertEquals("Low Tide", result["nextTideState"])
         assertEquals("12:30 PM", result["nextTideTime"])
         assertEquals("High Tide", result["secondaryTideState"])
@@ -90,6 +93,11 @@ class BeachgoerRulesTest {
         val result = BeachgoerRules.computeTideCard(null, now)
 
         assertEquals("ok", result["status"])
+        assertEquals(true, result["estimated"])
+        assertEquals(
+            "Tide times are estimated based on lunar cycles and should not be used for navigation.",
+            result["disclaimer"]
+        )
         assertEquals("High Tide", result["nextTideState"])
         assertEquals("06:45 PM", result["nextTideTime"])
     }

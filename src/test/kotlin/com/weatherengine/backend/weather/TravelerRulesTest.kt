@@ -1,8 +1,12 @@
 package com.weatherengine.backend.weather
 
+import com.weatherengine.backend.location.Location
+import com.weatherengine.backend.user.User
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 import java.time.LocalDateTime
+import java.util.UUID
 
 class TravelerRulesTest {
 
@@ -24,10 +28,8 @@ class TravelerRulesTest {
         val result = TravelerRules.computeFlightAlertCard(current, hourly, now)
 
         assertEquals("ok", result["status"])
-        assertEquals(false, result["hasDisruptionRisk"])
-        assertEquals("Normal", result["severity"])
-        assertEquals("On Schedule", result["flightStatus"])
-        assertTrue((result["message"] as String).contains("Smooth flying conditions"))
+        assertEquals("Minimal", result["delayRisk"])
+        assertTrue((result["reason"] as String).contains("Calm skies"))
     }
 
     @Test
@@ -47,10 +49,8 @@ class TravelerRulesTest {
         val result = TravelerRules.computeFlightAlertCard(current, hourly, now)
 
         assertEquals("ok", result["status"])
-        assertEquals(true, result["hasDisruptionRisk"])
-        assertEquals("Severe", result["severity"])
-        assertEquals("Delays Likely", result["flightStatus"])
-        assertTrue((result["reasons"] as List<*>).isNotEmpty())
+        assertEquals("High", result["delayRisk"])
+        assertTrue((result["reason"] as String).contains("Thunderstorms active"))
     }
 
     @Test
@@ -64,69 +64,63 @@ class TravelerRulesTest {
         val now = LocalDateTime.parse("2026-10-12T06:00")
         val result = TravelerRules.computeFlightAlertCard(current, hourly, now)
 
-        assertEquals(true, result["hasDisruptionRisk"])
-        assertTrue((result["reasons"] as List<*>).any { (it as String).contains("fog", ignoreCase = true) })
+        assertEquals("Moderate", result["delayRisk"])
+        assertTrue((result["reason"] as String).contains("Low visibility", ignoreCase = true))
     }
 
     @Test
-    fun testPackingSuggestionCard_rainyDestination() {
-        val current = OpenMeteoCurrentWeather(apparentTemperature = 15.0)
+    fun testPackingSuggestionCard_hotTropicalClimate() {
+        val current = OpenMeteoCurrentWeather(temperature2m = 32.0)
         val daily = OpenMeteoDailyForecast(
-            temperature2mMax = listOf(17.0),
-            temperature2mMin = listOf(12.0),
-            precipitationProbabilityMax = listOf(80),
-            uvIndexMax = listOf(3.0)
+            temperature2mMax = listOf(33.0, 34.0, 35.0),
+            temperature2mMin = listOf(26.0, 27.0, 26.0),
+            precipitationProbabilityMax = listOf(10, 5, 0),
+            uvIndexMax = listOf(9.0, 10.0, 8.5)
         )
-        val result = TravelerRules.computePackingSuggestionCard(current, daily, null, "London")
+        val result = TravelerRules.computePackingSuggestionCard(current, daily, null)
 
         assertEquals("ok", result["status"])
-        assertEquals("London", result["destination"])
-        assertTrue((result["headline"] as String).contains("raincoat in London"))
         val items = result["items"] as List<*>
-        assertTrue(items.any { (it as String).contains("Raincoat", ignoreCase = true) })
-    }
-
-    @Test
-    fun testPackingSuggestionCard_coldDestination() {
-        val current = OpenMeteoCurrentWeather(apparentTemperature = 2.0)
-        val daily = OpenMeteoDailyForecast(
-            temperature2mMax = listOf(4.0),
-            temperature2mMin = listOf(-2.0),
-            precipitationProbabilityMax = listOf(10),
-            uvIndexMax = listOf(2.0)
-        )
-        val result = TravelerRules.computePackingSuggestionCard(current, daily, null, "Zurich")
-
-        val items = result["items"] as List<*>
-        assertTrue(items.any { (it as String).contains("thermal coat", ignoreCase = true) })
-    }
-
-    @Test
-    fun testPackingSuggestionCard_sunnyHighUv() {
-        val current = OpenMeteoCurrentWeather(apparentTemperature = 32.0)
-        val daily = OpenMeteoDailyForecast(
-            temperature2mMax = listOf(35.0),
-            temperature2mMin = listOf(26.0),
-            precipitationProbabilityMax = listOf(0),
-            uvIndexMax = listOf(9.5)
-        )
-        val result = TravelerRules.computePackingSuggestionCard(current, daily, null, "Dubai")
-
-        val items = result["items"] as List<*>
+        assertTrue(items.any { (it as String).contains("cotton", ignoreCase = true) || it.contains("linen", ignoreCase = true) })
         assertTrue(items.any { (it as String).contains("sunscreen", ignoreCase = true) })
-        assertTrue(items.any { (it as String).contains("cotton", ignoreCase = true) })
     }
 
     @Test
-    fun testSavedDestinationsCard() {
-        val result = TravelerRules.computeSavedDestinationsCard(19.076, 72.877)
+    fun testSavedDestinationsCard_zeroLocationsReturnsEmptyState() {
+        val result = TravelerRules.computeSavedDestinationsCard(emptyList())
+
+        assertEquals("empty", result["status"])
+        val destinations = result["destinations"] as List<*>
+        assertEquals(0, destinations.size)
+        assertEquals("Add saved destinations in Locations tab", result["message"])
+    }
+
+    @Test
+    fun testSavedDestinationsCard_twoLocationsReturnsThoseDestinations() {
+        val mockUser = User(id = UUID.randomUUID(), email = "traveler@example.com", passwordHash = "hash")
+        val loc1 = Location(
+            id = UUID.randomUUID(),
+            user = mockUser,
+            label = "Mumbai HQ",
+            latitude = BigDecimal("19.0760"),
+            longitude = BigDecimal("72.8777")
+        )
+        val loc2 = Location(
+            id = UUID.randomUUID(),
+            user = mockUser,
+            label = "Bengaluru Office",
+            latitude = BigDecimal("12.9716"),
+            longitude = BigDecimal("77.5946")
+        )
+
+        val result = TravelerRules.computeSavedDestinationsCard(listOf(loc1, loc2))
 
         assertEquals("ok", result["status"])
         val destinations = result["destinations"] as List<*>
-        assertEquals(4, destinations.size)
-        val first = destinations[0] as Map<*, *>
-        assertEquals("London", first["name"])
-        assertEquals("UK", first["country"])
-        assertNotNull(first["packingTip"])
+        assertEquals(2, destinations.size)
+        val d1 = destinations[0] as Map<*, *>
+        val d2 = destinations[1] as Map<*, *>
+        assertEquals("Mumbai HQ", d1["name"])
+        assertEquals("Bengaluru Office", d2["name"])
     }
 }

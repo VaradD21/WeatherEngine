@@ -443,7 +443,7 @@ class ParentPersonaRulesTest {
             "rain_alert_card",
             "severe_weather_card"
         )
-        every { cacheService.getCachedWeatherBundle(28.0, 77.0) } returns WeatherBundleDto(
+        every { cacheService.getCachedWeatherBundle(28.0, 77.0, any()) } returns WeatherBundleDto(
             forecast = OpenMeteoForecastResponse(
                 timezone = "UTC",
                 hourly = OpenMeteoHourlyForecast(
