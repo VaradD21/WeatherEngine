@@ -1,4 +1,6 @@
 spring:
+  cache:
+    type: ${SPRING_CACHE_TYPE:simple}
   jpa:
     hibernate:
       ddl-auto: update

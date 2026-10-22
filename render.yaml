@@ -24,7 +24,7 @@ services:
         fromDatabase:
           name: weatherengine-db
           property: password
-      - key: REDIS_URL
+      - key: SPRING_DATA_REDIS_URL
         fromService:
           type: redis
           name: weatherengine-redis
