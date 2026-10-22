@@ -1,5 +1,5 @@
 # Stage 1: Build the Spring Boot fat JAR
-FROM eclipse-temurin:17-jdk-jammy AS builder
+FROM eclipse-temurin:21-jdk-jammy AS builder
 WORKDIR /workspace
 
 COPY gradlew ./
@@ -11,7 +11,7 @@ COPY src ./src
 RUN ./gradlew bootJar -x test --no-daemon
 
 # Stage 2: Minimal production runtime
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 RUN groupadd -r appgroup && useradd -r -g appgroup appuser
