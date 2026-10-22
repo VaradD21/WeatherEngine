@@ -38,7 +38,11 @@ import java.util.Date
 import java.util.UUID
 import javax.crypto.SecretKey
 
-data class AuthenticatedUser(val userId: UUID, val email: String)
+data class AuthenticatedUser(
+    val userId: UUID,
+    val email: String,
+    val role: String = "USER"
+)
 
 data class SignupRequest(
     @field:NotBlank(message = "Email is required")
@@ -64,20 +68,24 @@ data class AuthResponse(val email: String, val token: String)
 
 @Service
 class JwtService(
-    @Value("\${app.jwt.secret}") private val secret: String,
+    @Value("\${app.jwt.secret:}") private val secret: String,
     @Value("\${app.jwt.expiration-ms:86400000}") private val expirationMs: Long
 ) {
-    private val signingKey: SecretKey by lazy {
+    private val signingKey: SecretKey
+
+    init {
+        require(secret.isNotBlank()) { "app.jwt.secret must not be blank. Please set JWT_SECRET environment variable." }
         val keyBytes = secret.toByteArray(StandardCharsets.UTF_8)
-        require(keyBytes.size >= 32) { "JWT_SECRET must be at least 32 bytes" }
-        Keys.hmacShaKeyFor(keyBytes)
+        require(keyBytes.size >= 32) { "JWT_SECRET must be at least 32 bytes (got ${keyBytes.size} bytes)" }
+        signingKey = Keys.hmacShaKeyFor(keyBytes)
     }
 
-    fun generateToken(userId: UUID, email: String): String {
+    fun generateToken(userId: UUID, email: String, role: String = "USER"): String {
         val now = Date()
         return Jwts.builder()
             .subject(userId.toString())
             .claim("email", email)
+            .claim("role", role)
             .issuedAt(now)
             .expiration(Date(now.time + expirationMs))
             .signWith(signingKey, Jwts.SIG.HS256)
@@ -89,7 +97,8 @@ class JwtService(
             val claims = Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).payload
             val subject = claims.subject ?: return null
             val email = claims["email"] as? String ?: return null
-            AuthenticatedUser(userId = UUID.fromString(subject), email = email)
+            val role = (claims["role"] as? String)?.takeIf { it.isNotBlank() } ?: "USER"
+            AuthenticatedUser(userId = UUID.fromString(subject), email = email, role = role)
         } catch (_: Exception) {
             null
         }
@@ -103,8 +112,9 @@ class JwtAuthenticationFilter(private val jwtService: JwtService) : OncePerReque
             ?.takeIf { it.startsWith("Bearer ") }?.substring(7)?.trim()
         if (!token.isNullOrEmpty() && SecurityContextHolder.getContext().authentication == null) {
             jwtService.parseToken(token)?.let { user ->
+                val roleAuthority = if (user.role.startsWith("ROLE_")) user.role else "ROLE_${user.role}"
                 SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(
-                    user, null, listOf(SimpleGrantedAuthority("ROLE_USER"))
+                    user, null, listOf(SimpleGrantedAuthority(roleAuthority))
                 ).apply { details = WebAuthenticationDetailsSource().buildDetails(req) }
             }
         }
@@ -143,7 +153,8 @@ class AuthService(
                 email = email,
                 passwordHash = passwordEncoder.encode(request.password),
                 username = request.username?.trim()?.takeIf { it.isNotEmpty() },
-                phoneNumber = request.phoneNumber?.trim()?.takeIf { it.isNotEmpty() }
+                phoneNumber = request.phoneNumber?.trim()?.takeIf { it.isNotEmpty() },
+                role = "USER"
             )
         )
         personaRepository.findByCode("health_conscious")?.let { defaultPersona ->
@@ -151,7 +162,7 @@ class AuthService(
                 UserPersona(UserPersonaId(user.id!!, defaultPersona.id!!), user, defaultPersona)
             )
         }
-        return AuthResponse(user.email, jwtService.generateToken(user.id!!, user.email))
+        return AuthResponse(user.email, jwtService.generateToken(user.id!!, user.email, user.role))
     }
 
     @Transactional(readOnly = true)
@@ -160,6 +171,6 @@ class AuthService(
         val user = userRepository.findByEmail(email)
             ?.takeIf { passwordEncoder.matches(request.password, it.passwordHash) }
             ?: throw ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password")
-        return AuthResponse(user.email, jwtService.generateToken(user.id!!, user.email))
+        return AuthResponse(user.email, jwtService.generateToken(user.id!!, user.email, user.role))
     }
 }

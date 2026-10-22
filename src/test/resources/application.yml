@@ -34,7 +34,7 @@ app:
     secret: weatherengine-dev-secret-key-must-be-at-least-32-bytes-long
     expiration-ms: 86400000
   cors:
-    allowed-origins: ""
+    allowed-origins: "http://localhost:8080,http://10.0.2.2:8080"
   weather-providers:
     open-meteo:
       forecast-url: https://api.open-meteo.com/v1/forecast

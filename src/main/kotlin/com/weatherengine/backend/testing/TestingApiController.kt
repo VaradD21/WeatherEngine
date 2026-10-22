@@ -13,6 +13,7 @@ import com.weatherengine.backend.weather.HomepageResponse
 import com.weatherengine.backend.weather.WeatherBundleDto
 import com.weatherengine.backend.weather.WeatherCacheService
 import com.weatherengine.backend.weather.WidgetBuilder
+import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -21,6 +22,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/api/testing")
+@Profile("dev", "test")
 class TestingApiController(
     private val weatherOverrideService: WeatherOverrideService,
     private val weatherCacheService: WeatherCacheService,

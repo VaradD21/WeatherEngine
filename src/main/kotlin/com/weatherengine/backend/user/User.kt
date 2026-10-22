@@ -21,7 +21,10 @@ class User(
     var username: String? = null,
 
     @Column(name = "phone_number")
-    var phoneNumber: String? = null
+    var phoneNumber: String? = null,
+
+    @Column(name = "role", nullable = false)
+    var role: String = "USER"
 )
 
 interface UserRepository : JpaRepository<User, UUID> {

@@ -9,7 +9,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update # Automatically updates existing tables with new columns and tables
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
@@ -47,7 +47,7 @@ management:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:weatherengine-dev-secret-key-must-be-at-least-32-bytes-long}
+    secret: ${JWT_SECRET:}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24h
 
   cors:

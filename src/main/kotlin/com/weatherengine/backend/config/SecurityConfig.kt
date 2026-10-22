@@ -48,6 +48,11 @@ class SecurityConfig(
                 response.contentType = "application/json;charset=UTF-8"
                 response.writer.write("""{"error":"Unauthorized","message":"Valid authentication token required"}""")
             }
+            it.accessDeniedHandler { _, response, _ ->
+                response.status = HttpServletResponse.SC_FORBIDDEN
+                response.contentType = "application/json;charset=UTF-8"
+                response.writer.write("""{"error":"Forbidden","message":"Access denied"}""")
+            }
         }
         .authorizeHttpRequests { auth ->
             auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -56,11 +61,11 @@ class SecurityConfig(
                     "/api/weather",
                     "/actuator/health",
                     "/error",
-                    "/admin/**",
                     "/static/**",
-                    "/favicon.ico",
-                    "/api/testing/**"
+                    "/favicon.ico"
                 ).permitAll()
+                .requestMatchers("/admin/**", "/admin").hasRole("ADMIN")
+                .requestMatchers("/api/testing/**").hasRole("ADMIN")
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().denyAll()
         }
@@ -69,9 +74,9 @@ class SecurityConfig(
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
-        val extraOrigins = allowedOrigins.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        val origins = allowedOrigins.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         val config = CorsConfiguration().apply {
-            allowedOriginPatterns = listOf("http://localhost:8080", "http://10.0.2.2:8080") + extraOrigins
+            allowedOriginPatterns = origins
             allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
             allowedHeaders = listOf("Authorization", "Content-Type", "Accept")
             allowCredentials = true
