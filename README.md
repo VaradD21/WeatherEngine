@@ -5,7 +5,7 @@ Production-ready Spring Boot 3 (Kotlin) backend for **WeatherEngine**, providing
 ---
 
 ## Tech Stack
-- **Language & Runtime**: Kotlin 1.9.25, Java 17
+- **Language & Runtime**: Kotlin 1.9.25, Java 21 (JDK 21)
 - **Framework**: Spring Boot 3.3.4 (Web, Security, Data JPA, Validation, Cache, Actuator)
 - **Database**: PostgreSQL 16 (schema managed via `schema.sql` and seeded via `data.sql`)
 - **Cache**: Redis 7 (`weather-bundle` cache with 15-minute TTL)
@@ -75,14 +75,20 @@ src/main/kotlin/com/weatherengine/backend/
 
 ## Running Locally
 
+### Prerequisites: JDK 21 Configuration
+Ensure `JAVA_HOME` is set to JDK 21 (e.g. `C:\Program Files\Java\jdk-21.0.10` on Windows):
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.10"
+```
+
 ### 1. Run Unit Tests
 ```powershell
-.\gradlew.bat test
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.10"; .\gradlew.bat test
 ```
 
 ### 2. Start Backend Server
 ```powershell
-.\gradlew.bat bootRun
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.10"; .\gradlew.bat bootRun
 ```
 
 ### 3. Build Production Docker Image
