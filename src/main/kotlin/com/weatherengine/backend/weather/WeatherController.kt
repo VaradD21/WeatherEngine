@@ -29,14 +29,15 @@ class WeatherCacheService(
         key = "'v3:' + T(java.lang.String).format(T(java.util.Locale).US, '%.2f,%.2f', #lat, #lon)"
     )
     fun getCachedWeatherBundle(lat: Double, lon: Double): WeatherBundleDto {
-        val override = weatherOverrideService?.findOverride(lat, lon)
-        if (override != null) {
+        val overrideService = weatherOverrideService
+        val override = overrideService?.findOverride(lat, lon)
+        if (override != null && overrideService != null) {
             val base = try {
                 fetchRawBundle(lat, lon)
             } catch (ex: Exception) {
-                weatherOverrideService.createSyntheticBaseBundle(lat, lon)
+                overrideService.createSyntheticBaseBundle(lat, lon)
             }
-            return weatherOverrideService.applyOverride(base, override)
+            return overrideService.applyOverride(base, override)
         }
 
         return fetchRawBundle(lat, lon)

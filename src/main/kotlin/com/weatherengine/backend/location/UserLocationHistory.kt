@@ -47,6 +47,8 @@ interface UserLocationHistoryRepository : JpaRepository<UserLocationHistory, Lon
 
     fun findTopByUserIdOrderByRecordedAtDesc(userId: UUID): UserLocationHistory?
 
+    fun findTop10ByUserIdOrderByRecordedAtDesc(userId: UUID): List<UserLocationHistory>
+
     fun findTop50ByUserIdOrderByRecordedAtDesc(userId: UUID): List<UserLocationHistory>
 
     fun findByUserIdAndDayOfWeekAndHourOfDay(

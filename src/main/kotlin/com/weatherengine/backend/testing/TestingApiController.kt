@@ -6,6 +6,7 @@ import com.weatherengine.backend.alert.AlertLogRepository
 import com.weatherengine.backend.alert.WeatherAlertService
 import com.weatherengine.backend.alert.toDto
 import com.weatherengine.backend.common.ApiException
+import com.weatherengine.backend.location.PredictiveWeatherAlertDto
 import com.weatherengine.backend.persona.PersonaService
 import com.weatherengine.backend.user.*
 import com.weatherengine.backend.weather.HomepageResponse

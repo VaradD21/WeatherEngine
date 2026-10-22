@@ -14,4 +14,8 @@ interface AlertLogRepository : JpaRepository<AlertLog, UUID> {
         alertType: String,
         after: Instant
     ): List<AlertLog>
+
+    fun findTop50ByOrderBySentAtDesc(): List<AlertLog>
+
+    fun findTop20ByUserIdOrderBySentAtDesc(userId: UUID): List<AlertLog>
 }

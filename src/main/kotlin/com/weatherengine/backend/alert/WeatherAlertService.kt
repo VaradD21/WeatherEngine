@@ -1,6 +1,6 @@
 package com.weatherengine.backend.alert
 
-import com.weatherengine.backend.user.PredictiveWeatherAlertDto
+import com.weatherengine.backend.location.PredictiveWeatherAlertDto
 import com.weatherengine.backend.user.UserHealthProfile
 import com.weatherengine.backend.weather.WeatherBundleDto
 import org.springframework.stereotype.Service

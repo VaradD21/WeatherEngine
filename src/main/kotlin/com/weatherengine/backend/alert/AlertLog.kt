@@ -2,7 +2,6 @@ package com.weatherengine.backend.alert
 
 import com.weatherengine.backend.location.Location
 import jakarta.persistence.*
-import org.springframework.data.jpa.repository.JpaRepository
 import java.time.Instant
 import java.util.UUID
 
@@ -67,8 +66,3 @@ fun AlertLog.toDto(): AlertLogDto = AlertLogDto(
     longitude = this.longitude ?: this.location?.longitude?.toDouble(),
     sentAt = this.sentAt
 )
-
-interface AlertLogRepository : JpaRepository<AlertLog, UUID> {
-    fun findTop50ByOrderBySentAtDesc(): List<AlertLog>
-    fun findTop20ByUserIdOrderBySentAtDesc(userId: UUID): List<AlertLog>
-}
