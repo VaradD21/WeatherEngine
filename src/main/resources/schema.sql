@@ -105,3 +105,6 @@ CREATE TABLE IF NOT EXISTS user_location_history (
 
 CREATE INDEX IF NOT EXISTS idx_user_location_history_user_time ON user_location_history (user_id, recorded_at DESC);
 CREATE INDEX IF NOT EXISTS idx_user_location_routine ON user_location_history (user_id, day_of_week, hour_of_day);
+CREATE INDEX IF NOT EXISTS idx_locations_user_id ON locations(user_id);
+CREATE INDEX IF NOT EXISTS idx_alert_subscriptions_user_id ON alert_subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_alert_log_user_id ON alert_log(user_id);
