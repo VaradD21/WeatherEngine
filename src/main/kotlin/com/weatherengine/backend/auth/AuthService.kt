@@ -71,7 +71,7 @@ class JwtService(
     @Value("\${app.jwt.secret:}") private val secret: String,
     @Value("\${app.jwt.expiration-ms:86400000}") private val expirationMs: Long
 ) {
-    private val signingKey: SecretKey
+    private lateinit var signingKey: SecretKey
 
     init {
         require(secret.isNotBlank()) { "app.jwt.secret must not be blank. Please set JWT_SECRET environment variable." }
