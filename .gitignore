@@ -18,6 +18,10 @@ out/
 *.class
 output-metadata.json
 *.hprof
+reports/
+**/reports/
+test-results/
+**/test-results/
 
 # Local Configuration & Secrets
 /local.properties
@@ -56,12 +60,25 @@ captures/
 .cxx/
 .navigation/
 
+# Scratch & Planning
+scratch/
+**/scratch/
+.planning/
+**/planning/
+
 # OS & Logs
 .DS_Store
 Thumbs.db
 Desktop.ini
+nul
+*.db
+*.mv.db
+*.trace.db
+*.sqlite
+*.sqlite3
 *.log
+hs_err_pid*
+replay_pid*
 *.tmp
 *.bak
 *.swp
-

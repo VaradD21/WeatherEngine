@@ -1,10 +1,15 @@
 package com.weatherengine.app.ui.theme
 
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,7 +30,7 @@ import androidx.compose.ui.unit.dp
 // Modern Aurora & Frosted Glass Palette
 val ObsidianBg = Color(0xFF090D16)
 val DeepNavy = Color(0xFF0E1626)
-val GlassSurfaceDark = Color(0x28FFFFFF) // 16% transluscent white glass
+val GlassSurfaceDark = Color(0x28FFFFFF) // 16% translucent white glass
 val GlassBorderDark = Color(0x33A5B4FC)  // soft luminous indigo rim
 val GlassSurfaceLight = Color(0xF2FFFFFF)
 val GlassBorderLight = Color(0x1F000000)
@@ -46,21 +51,49 @@ fun AuroraBackground(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = isSystemInDarkTheme()
+
+    val infiniteTransition = rememberInfiniteTransition(label = "auroraShift")
+    val animOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 10000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "auroraShift"
+    )
+
     val bgBrush = if (isDark) {
+        val midColor1 = Color(0xFF0D1629)
+        val midColor2 = Color(0xFF132240)
+        val shiftColor = Color(
+            red = midColor1.red + (midColor2.red - midColor1.red) * animOffset,
+            green = midColor1.green + (midColor2.green - midColor1.green) * animOffset,
+            blue = midColor1.blue + (midColor2.blue - midColor1.blue) * animOffset,
+            alpha = 1f
+        )
         Brush.verticalGradient(
             colors = listOf(
                 Color(0xFF070B14),
-                Color(0xFF0D1629),
-                Color(0xFF111E38),
+                shiftColor,
+                Color(0xFF0F1A30),
                 Color(0xFF080D18)
             )
         )
     } else {
+        val light1 = Color(0xFFEFF6FF)
+        val light2 = Color(0xFFE0E7FF)
+        val shiftColor = Color(
+            red = light1.red + (light2.red - light1.red) * animOffset,
+            green = light1.green + (light2.green - light1.green) * animOffset,
+            blue = light1.blue + (light2.blue - light1.blue) * animOffset,
+            alpha = 1f
+        )
         Brush.verticalGradient(
             colors = listOf(
-                Color(0xFFEFF6FF),
-                Color(0xFFE2E8F0),
+                Color(0xFFF0F7FF),
+                shiftColor,
                 Color(0xFFF8FAFC)
             )
         )
@@ -81,7 +114,7 @@ fun GlassCard(
     containerColor: Color? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = isSystemInDarkTheme()
     val resolvedBorder = borderBrush ?: Brush.verticalGradient(
         listOf(
             Color.White.copy(alpha = if (isDark) 0.30f else 0.65f),

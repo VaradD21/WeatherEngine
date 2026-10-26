@@ -155,6 +155,69 @@ object AlertNotificationManager {
         )
     }
 
+    enum class TestAlertType {
+        HIGH_AQI,
+        HEAVY_RAIN,
+        EXTREME_HEAT,
+        SEVERE_STORM,
+        FROST_WARNING
+    }
+
+    fun triggerTestNotification(context: Context, type: TestAlertType) {
+        val (id, title, message) = when (type) {
+            TestAlertType.HIGH_AQI -> Triple(
+                1007,
+                "😷 Air Quality Alert: Hazardous (AQI 320)",
+                "Hazardous air quality detected. Limit outdoor activity and keep windows closed."
+            )
+            TestAlertType.HEAVY_RAIN -> Triple(
+                1005,
+                "🌧️ Heavy Rain Approaching",
+                "85% chance of torrential rainfall starting in the next hour. Carry rain gear."
+            )
+            TestAlertType.EXTREME_HEAT -> Triple(
+                1002,
+                "🔥 Heat Alert: Extreme Heat Warning",
+                "Apparent temperature feels like 43°C. High risk of heat exhaustion during midday."
+            )
+            TestAlertType.SEVERE_STORM -> Triple(
+                1001,
+                "⚠️ Weather Alert: Severe Thunderstorm",
+                "Dangerous thunderstorm with gusts exceeding 65 km/h detected in your area."
+            )
+            TestAlertType.FROST_WARNING -> Triple(
+                1004,
+                "❄️ Frost Warning (Severe Frost)",
+                "Freezing temperatures expected tonight (0°C). Protect sensitive crops and outdoor plants."
+            )
+        }
+
+        createNotificationChannel(context)
+
+        val openIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            id,
+            openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(id, notification)
+    }
+
     private fun postNotificationIfFresh(
         context: Context,
         key: String,

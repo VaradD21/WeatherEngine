@@ -150,6 +150,8 @@ fun SettingsScreen(
                 }
             }
 
+            TestNotificationCard()
+
             OutlinedButton(onClick = onNavigateCustomize, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                 Icon(Icons.Default.Widgets, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))

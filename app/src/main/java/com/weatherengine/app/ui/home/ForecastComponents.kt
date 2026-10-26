@@ -1,5 +1,11 @@
 package com.weatherengine.app.ui.home
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,7 +13,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,23 +34,53 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weatherengine.app.core.forecast.CurrentWeatherUi
-import com.weatherengine.app.core.forecast.DayForecastUi
+import com.weatherengine.app.ui.theme.GlassCard
 
 @Composable
 fun CurrentConditionsCard(current: CurrentWeatherUi, updatedAt: String, modifier: Modifier = Modifier) {
-    com.weatherengine.app.ui.theme.GlassCard(
+    val infiniteTransition = rememberInfiniteTransition(label = "weatherPulse")
+    val iconScale by infiniteTransition.animateFloat(
+        initialValue = 0.94f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "iconScale"
+    )
+    val iconOffsetY by infiniteTransition.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "iconOffsetY"
+    )
+    val badgeGlowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.10f,
+        targetValue = 0.22f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "badgeGlowAlpha"
+    )
+
+    GlassCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
         borderBrush = Brush.linearGradient(
@@ -88,8 +123,13 @@ fun CurrentConditionsCard(current: CurrentWeatherUi, updatedAt: String, modifier
                 Box(
                     modifier = Modifier
                         .size(80.dp)
+                        .graphicsLayer {
+                            scaleX = iconScale
+                            scaleY = iconScale
+                            translationY = iconOffsetY
+                        }
                         .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = badgeGlowAlpha)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -128,137 +168,6 @@ fun CurrentConditionsCard(current: CurrentWeatherUi, updatedAt: String, modifier
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 modifier = Modifier.align(Alignment.End)
             )
-        }
-    }
-}
-
-@Composable
-fun SevenDayForecastCard(days: List<DayForecastUi>, modifier: Modifier = Modifier) {
-    com.weatherengine.app.ui.theme.GlassCard(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(26.dp)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                text = "7-Day Forecast",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            days.forEachIndexed { index, day ->
-                DayForecastRow(day = day)
-                if (index < days.lastIndex) {
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.10f),
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DayForecastRow(day: DayForecastUi, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = day.dayLabel,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.width(76.dp)
-        )
-
-        Row(
-            modifier = Modifier.width(60.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = weatherIconFor(day.iconKey),
-                contentDescription = day.condition,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            if (day.precipitationProbability != null && day.precipitationProbability > 0) {
-                Text(
-                    text = "${day.precipitationProbability}%",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 4.dp),
-                    fontSize = 10.sp
-                )
-            }
-        }
-
-        Text(
-            text = day.minTempFormatted,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-            modifier = Modifier.width(36.dp),
-            textAlign = TextAlign.End
-        )
-
-        TemperatureRangeBar(
-            fractionStart = day.rangeFractionStart,
-            fractionEnd = day.rangeFractionEnd,
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 8.dp)
-        )
-
-        Text(
-            text = day.maxTempFormatted,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.width(36.dp),
-            textAlign = TextAlign.Start
-        )
-    }
-}
-
-@Composable
-fun TemperatureRangeBar(
-    fractionStart: Float,
-    fractionEnd: Float,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .height(6.dp)
-            .clip(RoundedCornerShape(3.dp))
-            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-    ) {
-        val fillWidthFraction = (fractionEnd - fractionStart).coerceAtLeast(0.05f)
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            if (fractionStart > 0f) {
-                Spacer(modifier = Modifier.weight(fractionStart))
-            }
-            Box(
-                modifier = Modifier
-                    .weight(fillWidthFraction)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                Color(0xFF4FC3F7),
-                                Color(0xFFFFB74D),
-                                Color(0xFFFF7043)
-                            )
-                        )
-                    )
-            )
-            val remaining = (1f - fractionEnd).coerceAtLeast(0f)
-            if (remaining > 0f) {
-                Spacer(modifier = Modifier.weight(remaining))
-            }
         }
     }
 }
@@ -362,4 +271,3 @@ internal fun weatherIconFor(key: String): ImageVector {
         else -> Icons.Default.Cloud
     }
 }
-

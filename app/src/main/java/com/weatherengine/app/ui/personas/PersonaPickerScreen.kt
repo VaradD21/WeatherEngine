@@ -1,5 +1,10 @@
 package com.weatherengine.app.ui.personas
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -163,11 +169,39 @@ fun PersonaPickerScreen(viewModel: PersonaPickerViewModel, onSaved: () -> Unit) 
                 }
                 items(viewModel.availablePersonas) { persona ->
                     val isSelected = state.selectedCodes.contains(persona.code)
-                    Card(
-                        modifier = Modifier.fillMaxWidth().clickable { viewModel.toggleSelection(persona.code) },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                    val cardScale by animateFloatAsState(
+                        targetValue = if (isSelected) 1.02f else 1.0f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
                         ),
+                        label = "cardScale_${persona.code}"
+                    )
+                    val cardElevation by animateDpAsState(
+                        targetValue = if (isSelected) 4.dp else 1.dp,
+                        animationSpec = spring(stiffness = Spring.StiffnessLow),
+                        label = "cardElevation_${persona.code}"
+                    )
+                    val checkmarkScale by animateFloatAsState(
+                        targetValue = if (isSelected) 1.15f else 1.0f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        ),
+                        label = "checkmarkScale_${persona.code}"
+                    )
+                    val containerColor by animateColorAsState(
+                        targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        label = "cardColor_${persona.code}"
+                    )
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .scale(cardScale)
+                            .clickable { viewModel.toggleSelection(persona.code) },
+                        colors = CardDefaults.cardColors(containerColor = containerColor),
+                        elevation = CardDefaults.cardElevation(defaultElevation = cardElevation),
                         border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
                     ) {
                         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -180,7 +214,10 @@ fun PersonaPickerScreen(viewModel: PersonaPickerViewModel, onSaved: () -> Unit) 
                                 imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
                                 contentDescription = if (isSelected) "Selected" else "Not selected",
                                 tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.size(28.dp).padding(start = 8.dp)
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .padding(start = 8.dp)
+                                    .scale(checkmarkScale)
                             )
                         }
                     }
