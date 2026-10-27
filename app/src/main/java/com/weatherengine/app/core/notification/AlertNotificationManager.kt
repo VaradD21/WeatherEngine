@@ -155,12 +155,33 @@ object AlertNotificationManager {
         )
     }
 
+    fun postHomeRainAlert(
+        context: Context,
+        homeName: String,
+        rainDetails: String,
+        force: Boolean = false
+    ) {
+        val title = "🌧️ Raining at $homeName"
+        val message = "Rain detected at $homeName: $rainDetails. Check windows or outdoor items!"
+        if (force) {
+            notifiedAlerts.remove("home_rain_${homeName.lowercase()}")
+        }
+        postNotificationIfFresh(
+            context = context,
+            key = "home_rain_${homeName.lowercase()}",
+            id = 1009,
+            title = title,
+            message = message
+        )
+    }
+
     enum class TestAlertType {
         HIGH_AQI,
         HEAVY_RAIN,
         EXTREME_HEAT,
         SEVERE_STORM,
-        FROST_WARNING
+        FROST_WARNING,
+        HOME_RAIN
     }
 
     fun triggerTestNotification(context: Context, type: TestAlertType) {
@@ -189,6 +210,11 @@ object AlertNotificationManager {
                 1004,
                 "❄️ Frost Warning (Severe Frost)",
                 "Freezing temperatures expected tonight (0°C). Protect sensitive crops and outdoor plants."
+            )
+            TestAlertType.HOME_RAIN -> Triple(
+                1009,
+                "🌧️ Raining at Home",
+                "Rain detected at Home (Moderate rain, 2.8 mm). Check windows or outdoor items!"
             )
         }
 

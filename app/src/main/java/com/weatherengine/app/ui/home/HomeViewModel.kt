@@ -1,10 +1,12 @@
 package com.weatherengine.app.ui.home
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.weatherengine.app.core.WidgetMapper
 import com.weatherengine.app.core.WidgetUi
 import com.weatherengine.app.core.forecast.ForecastUi
+import com.weatherengine.app.core.notification.AlertNotificationManager
 import com.weatherengine.app.data.api.NetworkResult
 import com.weatherengine.app.data.local.SettingsStore
 import com.weatherengine.app.data.location.AndroidLocationProvider
@@ -14,8 +16,6 @@ import com.weatherengine.app.data.repository.ForecastRepository
 import com.weatherengine.app.data.repository.WeatherEngineRepository
 import com.weatherengine.app.persona.PersonaRules
 import com.weatherengine.app.persona.PersonaWidgetType
-import android.content.Context
-import com.weatherengine.app.core.notification.AlertNotificationManager
 import com.weatherengine.app.widget.WeatherAppWidgetProvider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -171,6 +171,9 @@ class HomeViewModel(
                             WeatherAppWidgetProvider.updateAllWidgets(ctx, forecastResult.data, resolvedLabel)
                             com.weatherengine.app.widget.WeatherGlanceWidgetProvider.updateAllWidgets(ctx, forecastResult.data, resolvedLabel)
                             com.weatherengine.app.widget.AqiAlertWidgetProvider.updateAllWidgets(ctx, forecastResult.data, resolvedLabel)
+                            if (settingsStore.homeRainAlertEnabledFlow.first()) {
+                                com.weatherengine.app.core.worker.HomeRainAlertWorker.triggerImmediateCheck(ctx)
+                            }
                         }
                     }
                     is NetworkResult.Failure -> {

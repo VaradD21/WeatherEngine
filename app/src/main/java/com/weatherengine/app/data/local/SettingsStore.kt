@@ -3,6 +3,7 @@ package com.weatherengine.app.data.local
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
@@ -63,8 +64,13 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
 
         val KEY_WIDGET_ORDER = stringPreferencesKey("custom_widget_order")
         val KEY_DISABLED_WIDGETS = stringSetPreferencesKey("disabled_widgets")
-        val KEY_NOTIFICATIONS_ENABLED = androidx.datastore.preferences.core.booleanPreferencesKey("notifications_enabled")
+        val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val KEY_DEFAULT_SCREEN = stringPreferencesKey("default_screen")
+
+        val KEY_HOME_LAT = doublePreferencesKey("home_lat")
+        val KEY_HOME_LON = doublePreferencesKey("home_lon")
+        val KEY_HOME_NAME = stringPreferencesKey("home_name")
+        val KEY_HOME_RAIN_ALERT_ENABLED = booleanPreferencesKey("home_rain_alert_enabled")
     }
 
     private val safePreferences: Flow<Preferences> = dataStore?.data
@@ -92,6 +98,11 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
     open val selectedPersonasFlow: Flow<Set<String>> = safePreferences.map {
         it[KEY_SELECTED_PERSONAS] ?: DEFAULT_PERSONAS
     }
+
+    open val homeLatFlow: Flow<Double?> = safePreferences.map { it[KEY_HOME_LAT] }
+    open val homeLonFlow: Flow<Double?> = safePreferences.map { it[KEY_HOME_LON] }
+    open val homeNameFlow: Flow<String> = safePreferences.map { it[KEY_HOME_NAME] ?: "Home" }
+    open val homeRainAlertEnabledFlow: Flow<Boolean> = safePreferences.map { it[KEY_HOME_RAIN_ALERT_ENABLED] ?: false }
 
     open suspend fun saveAuth(token: String, email: String) {
         dataStore?.edit { prefs ->
@@ -125,6 +136,29 @@ open class SettingsStore(private val dataStore: DataStore<Preferences>? = null) 
         dataStore?.edit { prefs ->
             prefs[KEY_MANUAL_LAT] = lat
             prefs[KEY_MANUAL_LON] = lon
+        }
+    }
+
+    open suspend fun setHomeLocation(lat: Double, lon: Double, name: String = "Home") {
+        dataStore?.edit { prefs ->
+            prefs[KEY_HOME_LAT] = lat
+            prefs[KEY_HOME_LON] = lon
+            prefs[KEY_HOME_NAME] = name
+        }
+    }
+
+    open suspend fun setHomeRainAlertEnabled(enabled: Boolean) {
+        dataStore?.edit { prefs ->
+            prefs[KEY_HOME_RAIN_ALERT_ENABLED] = enabled
+        }
+    }
+
+    open suspend fun clearHomeLocation() {
+        dataStore?.edit { prefs ->
+            prefs.remove(KEY_HOME_LAT)
+            prefs.remove(KEY_HOME_LON)
+            prefs.remove(KEY_HOME_NAME)
+            prefs[KEY_HOME_RAIN_ALERT_ENABLED] = false
         }
     }
 

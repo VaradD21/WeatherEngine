@@ -42,6 +42,7 @@ class WeatherEngineApp : Application() {
         super.onCreate()
         appContainer = AppContainer(this)
         com.weatherengine.app.core.worker.LocationTrackingWorker.enqueueHourly(this)
+        com.weatherengine.app.core.worker.HomeRainAlertWorker.enqueuePeriodic(this)
     }
 }
 
@@ -151,7 +152,14 @@ fun WeatherEngineAppNav(app: ComponentActivity) {
             )
         }
         composable(Screen.Settings.route) {
-            val vm: SettingsViewModel = viewModel(factory = vmFactory { SettingsViewModel(container.settingsStore) })
+            val vm: SettingsViewModel = viewModel(factory = vmFactory {
+                SettingsViewModel(
+                    settingsStore = container.settingsStore,
+                    openMeteoApiService = container.openMeteoClient.apiService,
+                    locationProvider = AndroidLocationProvider(app),
+                    appContext = app.applicationContext
+                )
+            })
             SettingsScreen(
                 viewModel = vm,
                 onNavigateBack = { navController.popBackStack() },

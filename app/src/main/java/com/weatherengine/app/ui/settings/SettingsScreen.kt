@@ -107,6 +107,17 @@ fun SettingsScreen(
                 }
             }
 
+            HomeRainAlertCard(
+                state = state,
+                onEnabledChanged = viewModel::onHomeRainAlertEnabledChanged,
+                onHomeNameChanged = viewModel::onHomeNameChanged,
+                onHomeLatChanged = viewModel::onHomeLatChanged,
+                onHomeLonChanged = viewModel::onHomeLonChanged,
+                onSaveHomeLocation = viewModel::saveHomeLocation,
+                onUseCurrentLocation = viewModel::useCurrentLocationForHome,
+                onCheckHomeRainNow = viewModel::checkHomeRainNow
+            )
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)

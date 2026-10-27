@@ -76,6 +76,14 @@ fun TestNotificationCard(
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
             Button(
+                onClick = { fireNotification(AlertNotificationManager.TestAlertType.HOME_RAIN, "Home Rain") },
+                modifier = Modifier.fillMaxWidth().height(44.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+            ) {
+                Text("🏠 Trigger Home Rain Alert")
+            }
+
+            Button(
                 onClick = { fireNotification(AlertNotificationManager.TestAlertType.HIGH_AQI, "High AQI") },
                 modifier = Modifier.fillMaxWidth().height(44.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
